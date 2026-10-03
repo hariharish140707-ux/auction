@@ -26,36 +26,38 @@ app.get('/api/rooms/public', async (req, res) => {
   }
 });
 
-// All other web pages and Next.js assets proxy to Next.js on port 3000
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
-    return next();
-  }
-
-  const options: http.RequestOptions = {
-    hostname: '127.0.0.1',
-    port: 3000,
-    path: req.url,
-    method: req.method,
-    headers: {
-      ...req.headers,
-      host: req.headers.host || 'localhost:3000',
-    },
-  };
-
-  const proxyReq = http.request(options, (proxyRes) => {
-    res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
-    proxyRes.pipe(res, { end: true });
-  });
-
-  proxyReq.on('error', (err) => {
-    if (!res.headersSent) {
-      res.status(502).send('Web client is initializing, please refresh in 3 seconds...');
+// In development, proxy non-API requests to Next.js on port 3000
+if (process.env.NODE_ENV !== 'production') {
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+      return next();
     }
-  });
 
-  req.pipe(proxyReq, { end: true });
-});
+    const options: http.RequestOptions = {
+      hostname: '127.0.0.1',
+      port: 3000,
+      path: req.url,
+      method: req.method,
+      headers: {
+        ...req.headers,
+        host: req.headers.host || 'localhost:3000',
+      },
+    };
+
+    const proxyReq = http.request(options, (proxyRes) => {
+      res.writeHead(proxyRes.statusCode || 200, proxyRes.headers);
+      proxyRes.pipe(res, { end: true });
+    });
+
+    proxyReq.on('error', (err) => {
+      if (!res.headersSent) {
+        res.status(502).send('Web client is initializing, please refresh in 3 seconds...');
+      }
+    });
+
+    req.pipe(proxyReq, { end: true });
+  });
+}
 
 const server = http.createServer(app);
 const io = new Server(server, {
