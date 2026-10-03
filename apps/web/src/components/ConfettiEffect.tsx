@@ -11,13 +11,13 @@ export const ConfettiEffect: React.FC<ConfettiEffectProps> = ({ trigger }) => {
       const count = 200;
       const defaults = { origin: { y: 0.7 } };
 
-      function fire(particleRatio: number, opts: confetti.Options) {
+      const fire = (particleRatio: number, opts: confetti.Options) => {
         confetti({
           ...defaults,
           ...opts,
           particleCount: Math.floor(count * particleRatio),
         });
-      }
+      };
 
       fire(0.25, {
         spread: 26,
