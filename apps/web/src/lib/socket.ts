@@ -4,27 +4,34 @@ let socket: Socket | null = null;
 
 export function getSocket(): Socket {
   if (!socket) {
-    // In production, connect directly to the server URL if provided
-    // Otherwise, use same-origin (works for dev with Next.js proxy, or same-domain setups)
-    let serverUrl: string;
+    let serverUrl: string = '';
 
     if (typeof window !== 'undefined') {
       const envUrl = process.env.NEXT_PUBLIC_SERVER_URL;
       if (envUrl && envUrl.trim()) {
-        // Ensure the URL has a protocol
         serverUrl = envUrl.startsWith('http') ? envUrl : `https://${envUrl}`;
       } else {
-        // Fallback: use same origin (for dev proxy or single-domain deploy)
-        serverUrl = window.location.origin;
+        // Smart Render fallback: If on *.onrender.com and URL has -web, infer -server backend
+        const hostname = window.location.hostname;
+        if (hostname.endsWith('.onrender.com') && hostname.includes('-web')) {
+          const serverHostname = hostname.replace('-web', '-server');
+          serverUrl = `${window.location.protocol}//${serverHostname}`;
+        } else if (hostname === 'localhost' || hostname === '127.0.0.1') {
+          serverUrl = 'http://localhost:4000';
+        } else {
+          serverUrl = window.location.origin;
+        }
       }
     } else {
       serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:4000';
     }
 
+    console.log(`🔌 Socket connecting to backend server: ${serverUrl}`);
+
     socket = io(serverUrl, {
       autoConnect: true,
       reconnection: true,
-      reconnectionAttempts: 15,
+      reconnectionAttempts: 20,
       reconnectionDelay: 1000,
       transports: ['websocket', 'polling'],
     });
