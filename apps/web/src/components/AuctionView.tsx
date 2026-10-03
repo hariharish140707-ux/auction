@@ -205,7 +205,11 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
   };
 
   // Bid validation & Next Bid computation
-  let validationResult = { valid: false, reason: 'You must claim a team to bid', nextBidAmount: 0 };
+  let validationResult: { valid: boolean; reason?: string; nextBidAmount?: number } = {
+    valid: false,
+    reason: 'You must claim a team to bid',
+    nextBidAmount: 0,
+  };
   if (myTeam && playerBlock) {
     validationResult = validateBid(myTeam, playerBlock, room.settings);
   }
