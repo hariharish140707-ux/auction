@@ -1,0 +1,29 @@
+services:
+  # Backend Server (Socket.IO + Express)
+  - type: web
+    name: ipl-auction-server
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build --prefix packages/shared && npm run build --prefix apps/server
+    startCommand: npm run start --prefix apps/server
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+
+  # Frontend Web Client (Next.js)
+  - type: web
+    name: ipl-auction-web
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build --prefix packages/shared && npm run build --prefix apps/web
+    startCommand: npm run start --prefix apps/web
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SERVER_URL
+        fromService:
+          type: web
+          name: ipl-auction-server
+          property: host

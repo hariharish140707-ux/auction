@@ -1,0 +1,21 @@
+{
+  "name": "ipl-auction-app",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:shared": "npm --prefix packages/shared run build",
+    "dev:server": "npm --prefix apps/server run dev",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev": "concurrently -k -p \"[{name}]\" -n \"SHARED,SERVER,WEB\" -c \"cyan,yellow,blue\" \"npm --prefix packages/shared run watch\" \"npm --prefix apps/server run dev\" \"npm --prefix apps/web run dev\"",
+    "build": "npm --prefix packages/shared run build && npm --prefix apps/server run build && npm --prefix apps/web run build",
+    "test": "npm --prefix apps/server run test",
+    "seed": "npm --prefix apps/server run seed"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

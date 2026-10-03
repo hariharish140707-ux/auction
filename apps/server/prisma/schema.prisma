@@ -1,0 +1,84 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Player {
+  id               String   @id @default(uuid())
+  name             String
+  country          String
+  role             String   // BATSMAN | BOWLER | ALL_ROUNDER | WICKET_KEEPER
+  isOverseas       Boolean  @default(false)
+  basePrice        Float    // in Crores
+  battingRating    Int      @default(75)
+  bowlingRating    Int      @default(75)
+  overallRating    Int      @default(75)
+  set              String   // MARQUEE | TIER1_BAT | TIER1_BOWL | TIER1_AL | TIER1_WK | TIER2_* | TIER3_*
+  retainedByTeamId String?  // e.g., 'MI' for Mini auction retentions
+  retainedPrice    Float?   // in Crores
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Room {
+  id         String   @id @default(uuid())
+  code       String   @unique
+  status     String   @default("LOBBY")
+  settings   String   // JSON string of RoomSettings
+  hostId     String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  players    RoomPlayer[]
+  bids       BidEvent[]
+  squads     TeamSquadEntry[]
+  messages   ChatMessage[]
+}
+
+model RoomPlayer {
+  id        String   @id @default(uuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  name      String
+  teamId    String?
+  isHost    Boolean  @default(false)
+  isBot     Boolean  @default(false)
+  isOnline  Boolean  @default(true)
+  joinedAt  DateTime @default(now())
+}
+
+model TeamSquadEntry {
+  id         String   @id @default(uuid())
+  roomId     String
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  teamId     String
+  playerId   String
+  buyPrice   Float    // in Crores
+  isRetained Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
+
+model BidEvent {
+  id        String   @id @default(uuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  playerId  String
+  teamId    String
+  amount    Float
+  timestamp DateTime @default(now())
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  roomId     String
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  senderName String
+  senderTeam String?
+  text       String
+  isSystem   Boolean  @default(false)
+  timestamp  DateTime @default(now())
+}
