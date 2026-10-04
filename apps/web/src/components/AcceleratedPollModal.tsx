@@ -24,9 +24,17 @@ interface AcceleratedPollModalProps {
   room: RoomSnapshot;
   playerId: string;
   code: string;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-export const AcceleratedPollModal: React.FC<AcceleratedPollModalProps> = ({ room, playerId, code }) => {
+export const AcceleratedPollModal: React.FC<AcceleratedPollModalProps> = ({
+  room,
+  playerId,
+  code,
+  isOpen = true,
+  onClose,
+}) => {
   const poll = room.acceleratedPoll;
   const socket = getSocket();
 
@@ -41,6 +49,11 @@ export const AcceleratedPollModal: React.FC<AcceleratedPollModalProps> = ({ room
   const [roleFilter, setRoleFilter] = useState<'ALL' | 'BATSMAN' | 'BOWLER' | 'ALL_ROUNDER' | 'WICKET_KEEPER'>('ALL');
   const [submittedBallot, setSubmittedBallot] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+
+  const handleClose = () => {
+    setIsDismissed(true);
+    onClose?.();
+  };
 
   // Fetch upcoming players list when entering ballot phase
   useEffect(() => {
@@ -65,7 +78,7 @@ export const AcceleratedPollModal: React.FC<AcceleratedPollModalProps> = ({ room
     }
   }, [poll?.id, poll?.status]);
 
-  if (!poll || poll.status === 'COMPLETED' || poll.status === 'REJECTED' || isDismissed) {
+  if (!poll || poll.status === 'COMPLETED' || poll.status === 'REJECTED' || isDismissed || !isOpen) {
     return null;
   }
 
@@ -160,8 +173,9 @@ export const AcceleratedPollModal: React.FC<AcceleratedPollModalProps> = ({ room
           </div>
 
           <button
-            onClick={() => setIsDismissed(true)}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white transition-all"
+            onClick={handleClose}
+            className="p-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-400 hover:text-white transition-all hover:bg-slate-800 flex items-center gap-1"
+            title="Close modal (X)"
           >
             <X className="w-5 h-5" />
           </button>
@@ -227,6 +241,14 @@ export const AcceleratedPollModal: React.FC<AcceleratedPollModalProps> = ({ room
                     <span>Your Vote Recorded: {userVote ? 'Accepted (YES)' : 'Declined (NO)'}. Waiting for other players...</span>
                   </div>
                 )}
+
+                <button
+                  onClick={handleClose}
+                  className="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Close & Return to Room</span>
+                </button>
               </div>
             </div>
           )}
@@ -343,8 +365,8 @@ export const AcceleratedPollModal: React.FC<AcceleratedPollModalProps> = ({ room
                 })}
               </div>
 
-              {/* Bottom Actions: Submit Ballot & Launch Accelerated Auction */}
-              <div className="space-y-2 pt-3 border-t border-slate-800">
+              {/* Bottom Actions: Submit Ballot & Launch Accelerated Auction & Close Option */}
+              <div className="space-y-2.5 pt-3 border-t border-slate-800">
                 <button
                   onClick={handleSubmitBallot}
                   className="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 hover:brightness-110 text-slate-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg"
@@ -368,6 +390,19 @@ export const AcceleratedPollModal: React.FC<AcceleratedPollModalProps> = ({ room
                     </span>
                   </button>
                 )}
+
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/80">
+                  <p className="text-[11px] text-slate-400">
+                    💡 You can close this window anytime and return to the live auction.
+                  </p>
+                  <button
+                    onClick={handleClose}
+                    className="px-4 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:bg-slate-800 text-slate-200 font-bold text-xs flex items-center gap-1.5 shrink-0 transition-all"
+                  >
+                    <X className="w-4 h-4 text-slate-400" />
+                    <span>Close Window (X)</span>
+                  </button>
+                </div>
               </div>
             </div>
           )}

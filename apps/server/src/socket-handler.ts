@@ -106,6 +106,47 @@ export function setupSocketHandlers(io: Server) {
     );
 
     /**
+     * Update Player Name inside Room
+     */
+    socket.on(
+      'player:updateName',
+      async (data: { code: string; playerToken: string; newName: string }) => {
+        try {
+          const code = data.code.toUpperCase();
+          await auctionEngine.runSerialized(code, async (session) => {
+            const room = session.room;
+            const player = room.players.find((p) => p.id === data.playerToken);
+            if (!player) throw new Error('Player not found in room');
+
+            const cleanName = (data.newName || '').trim().substring(0, 24);
+            if (!cleanName) throw new Error('Name cannot be empty');
+
+            const oldName = player.name;
+            if (oldName === cleanName) return;
+
+            player.name = cleanName;
+
+            // Update host name if host
+            if (player.isHost) {
+              room.hostName = cleanName;
+            }
+
+            // Update team owner name if team claimed
+            if (player.teamId && room.teams[player.teamId]) {
+              room.teams[player.teamId].ownerName = cleanName;
+            }
+
+            auctionEngine.addChatMessage(room, 'System', `${oldName} changed their name to ${cleanName}.`, true);
+            await roomStore.saveRoom(room);
+            io.to(code).emit('room:state', room);
+          });
+        } catch (err: any) {
+          socket.emit('error', { message: err.message || 'Failed to update name' });
+        }
+      }
+    );
+
+    /**
      * Atomic Team Claiming / Unclaiming
      */
     socket.on(

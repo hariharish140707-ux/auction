@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { RoomSnapshot, RoomSettings, IPL_TEAMS } from '@ipl-auction/shared';
 import { TeamBadge } from './TeamBadge';
 import { AuctionStatsModal } from './AuctionStatsModal';
+import { EditNameModal } from './EditNameModal';
 import { getSocket } from '../lib/socket';
 import {
   Users,
@@ -20,6 +21,7 @@ import {
   UserX,
   Layers,
   AlertTriangle,
+  Edit3,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -35,12 +37,18 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
   const [chatInput, setChatInput] = useState('');
   const [editingSettings, setEditingSettings] = useState<RoomSettings>(room.settings);
   const [showStatsModal, setShowStatsModal] = useState(false);
+  const [showEditNameModal, setShowEditNameModal] = useState(false);
   const [playerToKick, setPlayerToKick] = useState<{ id: string; name: string } | null>(null);
 
   const socket = getSocket();
   const me = room.players.find((p) => p.id === playerId);
   const isHost = me?.isHost || false;
   const myTeamId = me?.teamId || null;
+
+  const handleSaveName = (newName: string) => {
+    localStorage.setItem('ipl_auction_user_name', newName);
+    socket.emit('player:updateName', { code, playerToken: playerId, newName });
+  };
 
   const handleKickPlayer = (targetId: string) => {
     socket.emit('room:kick', { code, playerToken: playerId, targetPlayerId: targetId });
@@ -121,6 +129,15 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowEditNameModal(true)}
+            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+            title="Edit your display name"
+          >
+            <Edit3 className="w-4 h-4 text-orange-400" />
+            <span className="max-w-[100px] truncate">{me?.name || 'Your Name'}</span>
+          </button>
+
           <button
             onClick={() => setShowStatsModal(true)}
             className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
@@ -221,7 +238,16 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
                       <span className="text-xs font-bold text-white flex items-center gap-1">
                         {p.name}
                         {p.id === playerId && (
-                          <span className="text-[10px] text-orange-400 font-semibold">(You)</span>
+                          <span className="text-[10px] text-orange-400 font-semibold flex items-center gap-0.5">
+                            (You)
+                            <button
+                              onClick={() => setShowEditNameModal(true)}
+                              className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-orange-400 transition-all ml-0.5"
+                              title="Edit Display Name"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                          </span>
                         )}
                       </span>
                       <div className="flex items-center gap-1.5">
@@ -514,6 +540,13 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
           </div>
         </div>
       )}
+      {/* Edit Display Name Modal */}
+      <EditNameModal
+        isOpen={showEditNameModal}
+        onClose={() => setShowEditNameModal(false)}
+        currentName={me?.name || ''}
+        onSave={handleSaveName}
+      />
     </div>
   );
 };

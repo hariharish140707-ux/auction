@@ -17,6 +17,7 @@ import { AuctionStatsModal } from './AuctionStatsModal';
 import { ExchangeModal } from './ExchangeModal';
 import { SquadsAccordionView } from './SquadsAccordionView';
 import { AcceleratedPollModal } from './AcceleratedPollModal';
+import { EditNameModal } from './EditNameModal';
 import { sounds } from '../lib/audio';
 import {
   Volume2,
@@ -45,6 +46,7 @@ import {
   X,
   UserX,
   AlertTriangle,
+  Edit3,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -70,6 +72,8 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
   const [chatInput, setChatInput] = useState('');
   const [bigSaleAnim, setBigSaleAnim] = useState<{ teamId: string; playerName: string; bid: number; phase: 'burst' | 'hold' | 'exit' } | null>(null);
   const [pendingTradeAlert, setPendingTradeAlert] = useState<TradeOffer | null>(null);
+  const [showEditNameModal, setShowEditNameModal] = useState(false);
+  const [isAcceleratedModalOpen, setIsAcceleratedModalOpen] = useState(true);
 
   const socket = getSocket();
   const me = room.players.find((p) => p.id === playerId);
@@ -81,6 +85,21 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
     socket.emit('room:kick', { code, playerToken: playerId, targetPlayerId: targetId });
     setPlayerToKick(null);
   };
+
+  const handleSaveName = (newName: string) => {
+    localStorage.setItem('ipl_auction_user_name', newName);
+    socket.emit('player:updateName', { code, playerToken: playerId, newName });
+  };
+
+  // Re-open Accelerated Poll modal automatically when a new poll starts
+  useEffect(() => {
+    if (
+      room.acceleratedPoll &&
+      (room.acceleratedPoll.status === 'VOTING' || room.acceleratedPoll.status === 'BALLOT')
+    ) {
+      setIsAcceleratedModalOpen(true);
+    }
+  }, [room.acceleratedPoll?.id, room.acceleratedPoll?.status]);
 
   const playerBlock = room.currentPlayerBlock;
 
@@ -268,6 +287,29 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
 
         {/* Action Buttons, Host Controls & Mute Toggle */}
         <div className="flex items-center gap-2">
+          {/* Edit Display Name Button */}
+          <button
+            onClick={() => setShowEditNameModal(true)}
+            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+            title="Edit your display name"
+          >
+            <Edit3 className="w-3.5 h-3.5 text-orange-400" />
+            <span className="hidden sm:inline max-w-[100px] truncate">{me?.name || 'Your Name'}</span>
+          </button>
+
+          {/* Accelerated Poll Badge / Trigger Button if Active */}
+          {room.acceleratedPoll &&
+            (room.acceleratedPoll.status === 'VOTING' || room.acceleratedPoll.status === 'BALLOT') && (
+              <button
+                onClick={() => setIsAcceleratedModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 font-bold text-xs flex items-center gap-1.5 shadow transition-all animate-pulse"
+                title="Open Accelerated Auction Ballot / Poll"
+              >
+                <Zap className="w-3.5 h-3.5 fill-current" />
+                <span className="hidden sm:inline">Accelerated Ballot Active</span>
+              </button>
+            )}
+
           {/* Players Management Button */}
           <button
             onClick={() => setShowPlayersModal(true)}
@@ -787,7 +829,23 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
         room={room}
         playerId={playerId}
         code={code}
+        isOpen={isAcceleratedModalOpen}
+        onClose={() => setIsAcceleratedModalOpen(false)}
       />
+
+      {/* Floating Reopen Button for Accelerated Auction Ballot when minimized */}
+      {room.acceleratedPoll &&
+        (room.acceleratedPoll.status === 'VOTING' || room.acceleratedPoll.status === 'BALLOT') &&
+        !isAcceleratedModalOpen && (
+          <button
+            onClick={() => setIsAcceleratedModalOpen(true)}
+            className="fixed bottom-24 right-5 z-40 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-600 text-slate-950 font-black text-xs flex items-center gap-2 shadow-2xl glow-orange hover:scale-105 transition-all animate-bounce"
+            title="Re-open Accelerated Auction Ballot"
+          >
+            <Zap className="w-4 h-4 fill-current" />
+            <span>⚡ Accelerated {room.acceleratedPoll.status === 'VOTING' ? 'Poll' : 'Ballot'} Active</span>
+          </button>
+        )}
 
       {/* Interactive Incoming Trade Proposal Alert Modal */}
       {pendingTradeAlert && (
@@ -1096,7 +1154,16 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs font-bold text-white">{p.name}</span>
                         {p.id === playerId && (
-                          <span className="text-[10px] text-orange-400 font-bold">(You)</span>
+                          <span className="text-[10px] text-orange-400 font-bold flex items-center gap-0.5">
+                            (You)
+                            <button
+                              onClick={() => setShowEditNameModal(true)}
+                              className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-orange-400 transition-all ml-0.5"
+                              title="Edit Display Name"
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </button>
+                          </span>
                         )}
                         {p.isHost && (
                           <span className="text-[9px] bg-amber-500/20 text-amber-400 border border-amber-500/30 px-1.5 py-0.2 rounded font-bold">
@@ -1177,6 +1244,13 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
           </div>
         </div>
       )}
+      {/* Edit Display Name Modal */}
+      <EditNameModal
+        isOpen={showEditNameModal}
+        onClose={() => setShowEditNameModal(false)}
+        currentName={me?.name || ''}
+        onSave={handleSaveName}
+      />
     </div>
   );
 };
