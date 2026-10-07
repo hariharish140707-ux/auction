@@ -19,6 +19,7 @@ import { SquadsAccordionView } from './SquadsAccordionView';
 import { AcceleratedPollModal } from './AcceleratedPollModal';
 import { EditNameModal } from './EditNameModal';
 import { sounds } from '../lib/audio';
+import { getSetCardInfo, DISPLAY_SET_ORDER } from '../lib/setCardConfig';
 import {
   Volume2,
   VolumeX,
@@ -70,7 +71,6 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
   const [confettiTrigger, setConfettiTrigger] = useState(false);
   const [soldOverlay, setSoldOverlay] = useState<{ type: 'SOLD' | 'UNSOLD'; text: string } | null>(null);
   const [chatInput, setChatInput] = useState('');
-  const [bigSaleAnim, setBigSaleAnim] = useState<{ teamId: string; playerName: string; bid: number; phase: 'burst' | 'hold' | 'exit' } | null>(null);
   const [pendingTradeAlert, setPendingTradeAlert] = useState<TradeOffer | null>(null);
   const [showEditNameModal, setShowEditNameModal] = useState(false);
   const [isAcceleratedModalOpen, setIsAcceleratedModalOpen] = useState(true);
@@ -143,44 +143,22 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
     }
   }, [room.trades, myTeamId]);
 
-  // React to room status changes for audio & overlays
+  // React to room status changes for audio & normal popups for ALL sold/unsold events
   useEffect(() => {
     if (room.status === 'SOLD') {
       const bid = playerBlock?.currentBid || 0;
       const soldTeamId = playerBlock?.highestBidderTeamId || '';
-      const playerName = playerBlock?.player?.name || '';
 
-      if (bid >= 15 && soldTeamId) {
-        // Trigger big-sale team logo burst animation for 15 Cr+
-        setBigSaleAnim({ teamId: soldTeamId, playerName, bid, phase: 'burst' });
-        setTimeout(() => setBigSaleAnim((prev) => prev ? { ...prev, phase: 'hold' } : null), 50);
-        setTimeout(() => setBigSaleAnim((prev) => prev ? { ...prev, phase: 'exit' } : null), 1800);
-        setTimeout(() => {
-          setBigSaleAnim(null);
-          // Normal sold celebration fires after animation
-          sounds.playSoldSound();
-          setConfettiTrigger(true);
-          setSoldOverlay({
-            type: 'SOLD',
-            text: `🔨 SOLD to ${playerBlock?.highestBidderName || soldTeamId} for ₹${bid.toFixed(2)} Cr!`,
-          });
-          setTimeout(() => {
-            setSoldOverlay(null);
-            setConfettiTrigger(false);
-          }, 2400);
-        }, 2600);
-      } else {
-        sounds.playSoldSound();
-        setConfettiTrigger(true);
-        setSoldOverlay({
-          type: 'SOLD',
-          text: `🔨 SOLD to ${playerBlock?.highestBidderName || soldTeamId} for ₹${bid.toFixed(2)} Cr!`,
-        });
-        setTimeout(() => {
-          setSoldOverlay(null);
-          setConfettiTrigger(false);
-        }, 2400);
-      }
+      sounds.playSoldSound();
+      setConfettiTrigger(true);
+      setSoldOverlay({
+        type: 'SOLD',
+        text: `🔨 SOLD to ${playerBlock?.highestBidderName || soldTeamId} for ₹${bid.toFixed(2)} Cr!`,
+      });
+      setTimeout(() => {
+        setSoldOverlay(null);
+        setConfettiTrigger(false);
+      }, 2400);
     } else if (room.status === 'UNSOLD') {
       sounds.playUnsoldSound();
       setSoldOverlay({
@@ -472,6 +450,73 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
       <main className="max-w-6xl mx-auto w-full my-3 grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left/Center Column (8 cols): Player Card & Bidding Panel */}
         <div className="lg:col-span-8 space-y-4">
+
+          {/* ━━━━━━━━━━ AUCTION SET CARDS PIPELINE ("WHAT IS COMING NEXT") ━━━━━━━━━━ */}
+          <div className="glass-panel p-3.5 rounded-2xl border border-slate-800 space-y-2">
+            <div className="flex items-center justify-between px-1">
+              <div className="flex items-center gap-2">
+                <Layers className="w-4 h-4 text-orange-400" />
+                <span className="text-xs font-black uppercase tracking-wider text-slate-200">
+                  Auction Sets Pipeline (What's Coming)
+                </span>
+              </div>
+              <button
+                onClick={() => setShowStatsModal(true)}
+                className="text-[11px] font-extrabold text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors"
+              >
+                <span>View Full Set List & Players</span>
+                <Sparkles className="w-3 h-3" />
+              </button>
+            </div>
+
+            {/* Set Cards Horizontal Strip */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
+              {DISPLAY_SET_ORDER.map((setKey, idx) => {
+                const info = getSetCardInfo(setKey);
+                const isCurrent = playerBlock?.player.set === setKey;
+                // Find next set index
+                const currentSetIdx = DISPLAY_SET_ORDER.indexOf(playerBlock?.player.set || 'MARQUEE');
+                const isNext = idx === currentSetIdx + 1;
+
+                return (
+                  <button
+                    key={setKey}
+                    onClick={() => setShowStatsModal(true)}
+                    className={`shrink-0 px-3 py-2 rounded-xl border text-left transition-all flex flex-col justify-between min-w-[125px] ${
+                      isCurrent
+                        ? `bg-gradient-to-r ${info.bgGradient} ${info.borderColor} shadow-lg ring-2 ring-orange-500/50 scale-[1.02]`
+                        : isNext
+                        ? 'bg-slate-900/90 border-orange-500/40 text-slate-200 hover:border-orange-500'
+                        : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-1 w-full">
+                      <span className="text-sm">{info.icon}</span>
+                      {isCurrent ? (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 animate-pulse">
+                          LIVE NOW
+                        </span>
+                      ) : isNext ? (
+                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-500/40">
+                          NEXT
+                        </span>
+                      ) : null}
+                    </div>
+
+                    <div className="mt-1">
+                      <div className={`text-xs font-extrabold truncate ${isCurrent ? info.textColor : 'text-slate-200'}`}>
+                        {info.shortTitle}
+                      </div>
+                      <div className="text-[9px] text-slate-400 truncate font-medium">
+                        {info.description.substring(0, 22)}...
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {playerBlock ? (
             <div className="glass-panel p-5 sm:p-7 rounded-3xl space-y-5 border border-slate-800 shadow-2xl relative overflow-hidden">
               {/* Corner Circular Timer Badge */}
@@ -484,6 +529,29 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
               >
                 {playerBlock.timerSecondsLeft}s
               </div>
+
+              {/* Set Banner Header Card */}
+              {(() => {
+                const currentSetCard = getSetCardInfo(playerBlock.player.set);
+                return (
+                  <div className={`p-3.5 rounded-2xl bg-gradient-to-r ${currentSetCard.bgGradient} border ${currentSetCard.borderColor} flex items-center justify-between shadow-md mb-2`}>
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl sm:text-2xl">{currentSetCard.icon}</span>
+                      <div>
+                        <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase block">
+                          AUCTION BLOCK SET
+                        </span>
+                        <h3 className={`font-black text-xs sm:text-sm ${currentSetCard.textColor}`}>
+                          {currentSetCard.title}
+                        </h3>
+                      </div>
+                    </div>
+                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${currentSetCard.badgeColor}`}>
+                      {currentSetCard.description}
+                    </span>
+                  </div>
+                );
+              })()}
 
               {/* Player Header Info */}
               <div className="flex items-start gap-4">
@@ -982,138 +1050,8 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
           </div>
         </div>
       )}
-      {/* ━━━━━━━━━━ 15 Cr+ BIG SALE TEAM LOGO BURST ANIMATION ━━━━━━━━━━ */}
-      {bigSaleAnim && (() => {
-        const team = IPL_TEAMS.find((t) => t.id === bigSaleAnim.teamId) || {
-          shortName: bigSaleAnim.teamId,
-          name: bigSaleAnim.teamId,
-          primaryColor: '#1e293b',
-          secondaryColor: '#f59e0b',
-          textColor: '#ffffff',
-        };
 
-        const teamGradients: Record<string, string> = {
-          MI: 'radial-gradient(ellipse at center, #1565C0 0%, #0D47A1 35%, #01003A 100%)',
-          CSK: 'radial-gradient(ellipse at center, #FDD835 0%, #F9A825 40%, #E65100 100%)',
-          RCB: 'radial-gradient(ellipse at center, #B71C1C 0%, #880E0E 45%, #1a0000 100%)',
-          KKR: 'radial-gradient(ellipse at center, #6A1B9A 0%, #4A148C 45%, #12005e 100%)',
-          DC:  'radial-gradient(ellipse at center, #1565C0 0%, #0D47A1 45%, #B71C1C 100%)',
-          PBKS:'radial-gradient(ellipse at center, #C62828 0%, #B71C1C 45%, #4a0000 100%)',
-          RR:  'radial-gradient(ellipse at center, #AD1457 0%, #880E4F 45%, #4a0033 100%)',
-          SRH: 'radial-gradient(ellipse at center, #E64A19 0%, #BF360C 45%, #5d1600 100%)',
-          GT:  'radial-gradient(ellipse at center, #37474F 0%, #1B2838 45%, #000d1a 100%)',
-          LSG: 'radial-gradient(ellipse at center, #1565C0 0%, #0D47A1 45%, #FF6F00 100%)',
-        };
-
-        const bgGradient = teamGradients[bigSaleAnim.teamId] || `radial-gradient(ellipse at center, ${team.primaryColor} 0%, #000 100%)`;
-
-        const scaleClass =
-          bigSaleAnim.phase === 'burst'
-            ? 'scale-[0.05] opacity-0'
-            : bigSaleAnim.phase === 'hold'
-            ? 'scale-100 opacity-100'
-            : 'scale-[1.25] opacity-0';
-
-        return (
-          <div
-            className="fixed inset-0 z-[999] flex items-center justify-center overflow-hidden pointer-events-none"
-            style={{ background: bgGradient }}
-          >
-            {/* Shockwave rings */}
-            {bigSaleAnim.phase === 'hold' && (
-              <>
-                <div className="absolute rounded-full border-4 opacity-0 animate-[ping_1s_ease-out_0.1s_forwards]"
-                  style={{ width: '30vw', height: '30vw', borderColor: team.secondaryColor }} />
-                <div className="absolute rounded-full border-4 opacity-0 animate-[ping_1s_ease-out_0.35s_forwards]"
-                  style={{ width: '60vw', height: '60vw', borderColor: team.secondaryColor }} />
-                <div className="absolute rounded-full border-2 opacity-0 animate-[ping_1s_ease-out_0.6s_forwards]"
-                  style={{ width: '90vw', height: '90vw', borderColor: team.primaryColor }} />
-              </>
-            )}
-
-            {/* Gold sparkle burst particles */}
-            {bigSaleAnim.phase === 'hold' && Array.from({ length: 12 }).map((_, i) => (
-              <div
-                key={i}
-                className="absolute w-2 h-2 rounded-full"
-                style={{
-                  backgroundColor: i % 2 === 0 ? team.secondaryColor : '#FFD700',
-                  top: '50%',
-                  left: '50%',
-                  transform: `rotate(${i * 30}deg) translateX(${28 + (i % 3) * 8}vw)`,
-                  animation: 'ping 0.9s ease-out 0.2s forwards',
-                  opacity: 0,
-                }}
-              />
-            ))}
-
-            {/* Main logo shield */}
-            <div
-              className="flex flex-col items-center justify-center gap-6 transition-all duration-[900ms] ease-out"
-              style={{ transform: bigSaleAnim.phase === 'burst' ? 'scale(0.05)' : bigSaleAnim.phase === 'exit' ? 'scale(1.35)' : 'scale(1)',
-                opacity: bigSaleAnim.phase === 'burst' ? 0 : bigSaleAnim.phase === 'exit' ? 0 : 1 }}
-            >
-              {/* Team acronym badge */}
-              <div
-                className="rounded-full flex items-center justify-center font-black shadow-2xl border-8"
-                style={{
-                  width: '30vw',
-                  height: '30vw',
-                  maxWidth: '280px',
-                  maxHeight: '280px',
-                  minWidth: '140px',
-                  minHeight: '140px',
-                  fontSize: 'clamp(2rem, 7vw, 4.5rem)',
-                  backgroundColor: team.primaryColor,
-                  color: team.textColor,
-                  borderColor: team.secondaryColor,
-                  boxShadow: `0 0 80px ${team.secondaryColor}99, 0 0 140px ${team.primaryColor}55, inset 0 0 40px rgba(255,255,255,0.15)`,
-                }}
-              >
-                {team.shortName}
-              </div>
-
-              {/* Team name */}
-              <div className="text-center space-y-2">
-                <div
-                  className="font-black uppercase tracking-[0.2em] drop-shadow-[0_0_20px_rgba(255,215,0,0.9)]"
-                  style={{
-                    fontSize: 'clamp(1.1rem, 4vw, 2.5rem)',
-                    color: team.secondaryColor,
-                    textShadow: `0 0 30px ${team.secondaryColor}, 0 4px 12px rgba(0,0,0,0.8)`,
-                  }}
-                >
-                  {team.name}
-                </div>
-                <div
-                  className="font-black tracking-widest"
-                  style={{
-                    fontSize: 'clamp(1rem, 3.5vw, 2rem)',
-                    color: '#FFD700',
-                    textShadow: '0 0 25px rgba(255, 215, 0, 0.95), 0 2px 8px rgba(0,0,0,0.9)',
-                  }}
-                >
-                  ₹{bigSaleAnim.bid.toFixed(2)} CRORE
-                </div>
-                <div
-                  className="font-extrabold tracking-wide"
-                  style={{
-                    fontSize: 'clamp(0.7rem, 2vw, 1.2rem)',
-                    color: 'rgba(255,255,255,0.9)',
-                    textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-                  }}
-                >
-                  🔨 {bigSaleAnim.playerName}
-                </div>
-              </div>
-            </div>
-
-            {/* Vignette overlay */}
-            <div className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.55) 100%)' }} />
-          </div>
-        );
-      })()}
+      {/* Room Players & Host Kick Manager Modal */}
 
       {/* Room Players & Host Kick Manager Modal */}
       {showPlayersModal && (

@@ -1,9 +1,10 @@
-'use client';
+import 'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Player, TeamRatingSummary, IPL_TEAMS } from '@ipl-auction/shared';
 import { getSocket } from '../lib/socket';
 import { TeamBadge } from './TeamBadge';
+import { getSetCardInfo } from '../lib/setCardConfig';
 import {
   X,
   Search,
@@ -121,55 +122,66 @@ export const AuctionStatsModal: React.FC<AuctionStatsModalProps> = ({ isOpen, on
 
     return (
       <div className="space-y-6">
-        {Object.entries(groupedSets).map(([setName, players]) => (
-          <div key={setName} className="space-y-3">
-            <div className="flex items-center gap-3">
-              <span className="px-3 py-1 rounded-lg bg-amber-500/20 text-amber-400 font-extrabold text-xs border border-amber-500/30 uppercase tracking-wider">
-                {setName}
-              </span>
-              <div className="h-[1px] flex-1 bg-slate-800"></div>
-              <span className="text-[11px] font-bold text-slate-400">{players.length} players</span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {players.map((p) => (
-                <div
-                  key={p.id}
-                  className="p-3.5 rounded-2xl bg-[#171B26] border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between gap-3 shadow-md"
-                >
-                  <div className="space-y-1.5 min-w-0">
-                    <h4 className="font-extrabold text-sm text-white truncate">{p.name}</h4>
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span
-                        className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${getRoleBadgeStyle(
-                          p.role
-                        )}`}
-                      >
-                        {p.role === 'ALL_ROUNDER'
-                          ? 'All-Rounder'
-                          : p.role === 'WICKET_KEEPER'
-                          ? 'Wicket-Keeper'
-                          : p.role}
-                      </span>
-                      {p.isOverseas && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-950/80 text-indigo-300 border border-indigo-800/80 flex items-center gap-1">
-                          🌐 OS
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-right shrink-0">
-                    <div className="text-sm font-extrabold text-emerald-400">
-                      ₹{p.basePrice.toFixed(2)} Cr
-                    </div>
-                    <span className="text-[10px] font-bold uppercase text-slate-500">Base</span>
+        {Object.entries(groupedSets).map(([setName, players]) => {
+          const cardInfo = getSetCardInfo(setName);
+          return (
+            <div key={setName} className="space-y-3">
+              {/* Set Banner Card */}
+              <div className={`p-4 rounded-2xl bg-gradient-to-r ${cardInfo.bgGradient} border ${cardInfo.borderColor} flex items-center justify-between shadow-lg`}>
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">{cardInfo.icon}</span>
+                  <div>
+                    <h3 className={`font-black text-sm ${cardInfo.textColor} tracking-wide`}>
+                      {cardInfo.title}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 font-medium">{cardInfo.description}</p>
                   </div>
                 </div>
-              ))}
+                <span className={`text-[11px] font-extrabold px-3 py-1 rounded-full border ${cardInfo.badgeColor} shrink-0`}>
+                  {players.length} Players Coming Up
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {players.map((p) => (
+                  <div
+                    key={p.id}
+                    className="p-3.5 rounded-2xl bg-[#171B26] border border-slate-800 hover:border-slate-700 transition-all flex items-center justify-between gap-3 shadow-md"
+                  >
+                    <div className="space-y-1.5 min-w-0">
+                      <h4 className="font-extrabold text-sm text-white truncate">{p.name}</h4>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${getRoleBadgeStyle(
+                            p.role
+                          )}`}
+                        >
+                          {p.role === 'ALL_ROUNDER'
+                            ? 'All-Rounder'
+                            : p.role === 'WICKET_KEEPER'
+                            ? 'Wicket-Keeper'
+                            : p.role}
+                        </span>
+                        {p.isOverseas && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-indigo-950/80 text-indigo-300 border border-indigo-800/80 flex items-center gap-1">
+                            🌐 OS
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="text-right shrink-0">
+                      <div className="text-sm font-extrabold text-emerald-400">
+                        ₹{p.basePrice.toFixed(2)} Cr
+                      </div>
+                      <span className="text-[10px] font-bold uppercase text-slate-500">Base</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   };
