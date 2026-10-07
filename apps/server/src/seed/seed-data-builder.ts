@@ -98,13 +98,20 @@ const TIER1_BOWL: PlayerSeedItem[] = [
   { id: 'p-whasaranga',name: 'Wanindu Hasaranga',   country: 'Sri Lanka',    role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 2.0, battingRating: 72, bowlingRating: 87, overallRating: 86, set: 'TIER1_BOWL' },
 ];
 
-// ─── 🟠 TIER 2 (30 PLAYERS) ──────────────────────────────────────────────────
+// ─── 🟠 TIER 2 (expanded — ~50 players) ──────────────────────────────────────
 const TIER2_BAT: PlayerSeedItem[] = [
   { id: 'p-dpadikkal', name: 'Devdutt Padikkal',    country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 1.5, battingRating: 81, bowlingRating: 10, overallRating: 80, set: 'TIER2_BAT' },
   { id: 'p-pshaw',     name: 'Prithvi Shaw',        country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 1.0, battingRating: 82, bowlingRating: 10, overallRating: 80, set: 'TIER2_BAT' },
   { id: 'p-nrana',     name: 'Nitish Rana',         country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 1.5, battingRating: 82, bowlingRating: 40, overallRating: 81, set: 'TIER2_BAT' },
   { id: 'p-shashank',  name: 'Shashank Singh',      country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 1.0, battingRating: 82, bowlingRating: 20, overallRating: 81, set: 'TIER2_BAT', retainedByTeamId: 'PBKS', retainedPrice: 5.5 },
   { id: 'p-knair',     name: 'Karun Nair',          country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.75,battingRating: 78, bowlingRating: 10, overallRating: 76, set: 'TIER2_BAT' },
+  { id: 'p-sarkhan',   name: 'Sarfaraz Khan',       country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 1.0, battingRating: 82, bowlingRating: 10, overallRating: 80, set: 'TIER2_BAT' },
+  { id: 'p-manishp',   name: 'Manish Pandey',       country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.5, battingRating: 76, bowlingRating: 10, overallRating: 74, set: 'TIER2_BAT' },
+  { id: 'p-brook',     name: 'Harry Brook',         country: 'England',      role: 'BATSMAN',       isOverseas: true,  basePrice: 2.0, battingRating: 85, bowlingRating: 30, overallRating: 83, set: 'TIER2_BAT' },
+  { id: 'p-rossouw',   name: 'Rilee Rossouw',       country: 'South Africa', role: 'BATSMAN',       isOverseas: true,  basePrice: 1.5, battingRating: 84, bowlingRating: 15, overallRating: 82, set: 'TIER2_BAT' },
+  { id: 'p-rovpow',    name: 'Rovman Powell',       country: 'West Indies',  role: 'BATSMAN',       isOverseas: true,  basePrice: 1.5, battingRating: 82, bowlingRating: 15, overallRating: 80, set: 'TIER2_BAT' },
+  { id: 'p-racchin',   name: 'Rachin Ravindra',     country: 'New Zealand',  role: 'BATSMAN',       isOverseas: true,  basePrice: 2.0, battingRating: 82, bowlingRating: 68, overallRating: 80, set: 'TIER2_BAT' },
+  { id: 'p-warner',    name: 'David Warner',        country: 'Australia',    role: 'BATSMAN',       isOverseas: true,  basePrice: 2.0, battingRating: 86, bowlingRating: 15, overallRating: 84, set: 'TIER2_BAT' },
 ];
 
 const TIER2_WK: PlayerSeedItem[] = [
@@ -118,6 +125,7 @@ const TIER2_WK: PlayerSeedItem[] = [
   { id: 'p-kmendis',   name: 'Kusal Mendis',        country: 'Sri Lanka',    role: 'WICKET_KEEPER', isOverseas: true,  basePrice: 1.0, battingRating: 80, bowlingRating: 10, overallRating: 78, set: 'TIER2_WK' },
   { id: 'p-kperera',   name: 'Kusal Perera',        country: 'Sri Lanka',    role: 'WICKET_KEEPER', isOverseas: true,  basePrice: 1.0, battingRating: 79, bowlingRating: 10, overallRating: 77, set: 'TIER2_WK' },
   { id: 'p-rgurbaz',   name: 'Rahmanullah Gurbaz',  country: 'Afghanistan',  role: 'WICKET_KEEPER', isOverseas: true,  basePrice: 1.5, battingRating: 83, bowlingRating: 10, overallRating: 81, set: 'TIER2_WK' },
+  { id: 'p-kukush',    name: 'Kumar Kushagra',      country: 'India',        role: 'WICKET_KEEPER', isOverseas: false, basePrice: 0.5, battingRating: 78, bowlingRating: 10, overallRating: 76, set: 'TIER2_WK' },
 ];
 
 const TIER2_AL: PlayerSeedItem[] = [
@@ -131,23 +139,39 @@ const TIER2_AL: PlayerSeedItem[] = [
   { id: 'p-jholder',   name: 'Jason Holder',        country: 'West Indies',  role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 2.0, battingRating: 75, bowlingRating: 82, overallRating: 80, set: 'TIER2_AL' },
   { id: 'p-rchase',    name: 'Roston Chase',        country: 'West Indies',  role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 1.0, battingRating: 76, bowlingRating: 77, overallRating: 76, set: 'TIER2_AL' },
   { id: 'p-azomarzai', name: 'Azmatullah Omarzai',  country: 'Afghanistan',  role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 1.5, battingRating: 78, bowlingRating: 79, overallRating: 78, set: 'TIER2_AL' },
+  { id: 'p-shardul',   name: 'Shardul Thakur',      country: 'India',        role: 'ALL_ROUNDER',   isOverseas: false, basePrice: 2.0, battingRating: 68, bowlingRating: 82, overallRating: 79, set: 'TIER2_AL' },
+  { id: 'p-shahrukh',  name: 'Shahrukh Khan',       country: 'India',        role: 'ALL_ROUNDER',   isOverseas: false, basePrice: 1.5, battingRating: 82, bowlingRating: 50, overallRating: 78, set: 'TIER2_AL' },
 ];
 
 const TIER2_BOWL: PlayerSeedItem[] = [
   { id: 'p-akhan',     name: 'Avesh Khan',          country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 2.0, battingRating: 20, bowlingRating: 84, overallRating: 81, set: 'TIER2_BOWL' },
   { id: 'p-yashrana',  name: 'Harshit Rana',        country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 1.0, battingRating: 40, bowlingRating: 84, overallRating: 82, set: 'TIER2_BOWL', retainedByTeamId: 'KKR', retainedPrice: 4.0 },
   { id: 'p-akashd',    name: 'Akash Deep',          country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 1.0, battingRating: 25, bowlingRating: 82, overallRating: 79, set: 'TIER2_BOWL' },
-  { id: 'p-[#khaleel]',name: 'Khaleel Ahmed',       country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 1.5, battingRating: 15, bowlingRating: 83, overallRating: 80, set: 'TIER2_BOWL' },
+  { id: 'p-khaleel',   name: 'Khaleel Ahmed',       country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 1.5, battingRating: 15, bowlingRating: 83, overallRating: 80, set: 'TIER2_BOWL' },
   { id: 'p-lockie',    name: 'Lockie Ferguson',     country: 'New Zealand',  role: 'BOWLER',        isOverseas: true,  basePrice: 2.0, battingRating: 20, bowlingRating: 83, overallRating: 80, set: 'TIER2_BOWL' },
+  { id: 'p-umesh',     name: 'Umesh Yadav',         country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 1.0, battingRating: 25, bowlingRating: 81, overallRating: 78, set: 'TIER2_BOWL' },
+  { id: 'p-rchahar',   name: 'Rahul Chahar',        country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 1.0, battingRating: 20, bowlingRating: 80, overallRating: 77, set: 'TIER2_BOWL' },
+  { id: 'p-yashdayal', name: 'Yash Dayal',          country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.75,battingRating: 20, bowlingRating: 80, overallRating: 77, set: 'TIER2_BOWL' },
+  { id: 'p-anortje',   name: 'Anrich Nortje',       country: 'South Africa', role: 'BOWLER',        isOverseas: true,  basePrice: 2.0, battingRating: 20, bowlingRating: 85, overallRating: 82, set: 'TIER2_BOWL' },
+  { id: 'p-mustafiz',  name: 'Mustafizur Rahman',   country: 'Bangladesh',   role: 'BOWLER',        isOverseas: true,  basePrice: 2.0, battingRating: 15, bowlingRating: 84, overallRating: 81, set: 'TIER2_BOWL' },
 ];
 
-// ─── 🟢 TIER 3 (30 PLAYERS) ──────────────────────────────────────────────────
+// ─── 🟢 TIER 3 (expanded — ~60 players) ──────────────────────────────────────
 const TIER3_BAT: PlayerSeedItem[] = [
   { id: 'p-abadoni',   name: 'Ayush Badoni',        country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.5, battingRating: 80, bowlingRating: 45, overallRating: 78, set: 'TIER3_BAT', retainedByTeamId: 'LSG', retainedPrice: 4.0 },
   { id: 'p-vsuryav',   name: 'Vaibhav Suryavanshi', country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.3, battingRating: 76, bowlingRating: 10, overallRating: 73, set: 'TIER3_BAT' },
   { id: 'p-bking',     name: 'Brandon King',        country: 'West Indies',  role: 'BATSMAN',       isOverseas: true,  basePrice: 0.75,battingRating: 78, bowlingRating: 10, overallRating: 76, set: 'TIER3_BAT' },
   { id: 'p-rhendricks',name: 'Reeza Hendricks',     country: 'South Africa', role: 'BATSMAN',       isOverseas: true,  basePrice: 0.75,battingRating: 77, bowlingRating: 10, overallRating: 75, set: 'TIER3_BAT' },
   { id: 'p-izadran',   name: 'Ibrahim Zadran',      country: 'Afghanistan',  role: 'BATSMAN',       isOverseas: true,  basePrice: 0.75,battingRating: 78, bowlingRating: 10, overallRating: 76, set: 'TIER3_BAT' },
+  { id: 'p-rtripathi', name: 'Rahul Tripathi',      country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.75,battingRating: 77, bowlingRating: 10, overallRating: 75, set: 'TIER3_BAT' },
+  { id: 'p-angkrish',  name: 'Angkrish Raghuvanshi',country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.3, battingRating: 75, bowlingRating: 15, overallRating: 72, set: 'TIER3_BAT' },
+  { id: 'p-rickybhui', name: 'Ricky Bhui',          country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.3, battingRating: 73, bowlingRating: 10, overallRating: 70, set: 'TIER3_BAT' },
+  { id: 'p-samrizvi',  name: 'Sameer Rizvi',        country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.75,battingRating: 78, bowlingRating: 20, overallRating: 75, set: 'TIER3_BAT' },
+  { id: 'p-shubdub',   name: 'Shubham Dubey',       country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.5, battingRating: 76, bowlingRating: 15, overallRating: 73, set: 'TIER3_BAT' },
+  { id: 'p-duckett',   name: 'Ben Duckett',         country: 'England',      role: 'BATSMAN',       isOverseas: true,  basePrice: 1.0, battingRating: 80, bowlingRating: 10, overallRating: 78, set: 'TIER3_BAT' },
+  { id: 'p-swastikc',  name: 'Swastik Chhikara',    country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.2, battingRating: 72, bowlingRating: 10, overallRating: 69, set: 'TIER3_BAT' },
+  { id: 'p-tejasvis',  name: 'Tejasvi Singh',       country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.3, battingRating: 74, bowlingRating: 15, overallRating: 71, set: 'TIER3_BAT' },
+  { id: 'p-akshatr',   name: 'Akshat Raghuwanshi',  country: 'India',        role: 'BATSMAN',       isOverseas: false, basePrice: 0.3, battingRating: 72, bowlingRating: 10, overallRating: 69, set: 'TIER3_BAT' },
 ];
 
 const TIER3_WK: PlayerSeedItem[] = [
@@ -156,6 +180,9 @@ const TIER3_WK: PlayerSeedItem[] = [
   { id: 'p-msdhoni',   name: 'MS Dhoni',            country: 'India',        role: 'WICKET_KEEPER', isOverseas: false, basePrice: 2.0, battingRating: 84, bowlingRating: 10, overallRating: 85, set: 'TIER3_WK', retainedByTeamId: 'CSK', retainedPrice: 4.0 },
   { id: 'p-tstubbs',   name: 'Tristan Stubbs',      country: 'South Africa', role: 'WICKET_KEEPER', isOverseas: true,  basePrice: 1.5, battingRating: 86, bowlingRating: 40, overallRating: 85, set: 'TIER3_WK', retainedByTeamId: 'DC',  retainedPrice: 10.0 },
   { id: 'p-prabhsim',  name: 'Prabhsimran Singh',   country: 'India',        role: 'WICKET_KEEPER', isOverseas: false, basePrice: 1.0, battingRating: 81, bowlingRating: 10, overallRating: 79, set: 'TIER3_WK', retainedByTeamId: 'PBKS',retainedPrice: 4.0 },
+  { id: 'p-ksbharat',  name: 'K.S. Bharat',         country: 'India',        role: 'WICKET_KEEPER', isOverseas: false, basePrice: 0.5, battingRating: 72, bowlingRating: 5,  overallRating: 70, set: 'TIER3_WK' },
+  { id: 'p-robinminz', name: 'Robin Minz',          country: 'India',        role: 'WICKET_KEEPER', isOverseas: false, basePrice: 0.3, battingRating: 74, bowlingRating: 10, overallRating: 71, set: 'TIER3_WK' },
+  { id: 'p-shope',     name: 'Shai Hope',           country: 'West Indies',  role: 'WICKET_KEEPER', isOverseas: true,  basePrice: 0.75,battingRating: 79, bowlingRating: 10, overallRating: 77, set: 'TIER3_WK' },
 ];
 
 const TIER3_AL: PlayerSeedItem[] = [
@@ -163,11 +190,18 @@ const TIER3_AL: PlayerSeedItem[] = [
   { id: 'p-glinde',    name: 'George Linde',        country: 'South Africa', role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 0.5, battingRating: 72, bowlingRating: 76, overallRating: 74, set: 'TIER3_AL' },
   { id: 'p-mnabi',     name: 'Mohammad Nabi',       country: 'Afghanistan',  role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 1.5, battingRating: 75, bowlingRating: 79, overallRating: 77, set: 'TIER3_AL' },
   { id: 'p-rshepherd', name: 'Romario Shepherd',    country: 'West Indies',  role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 1.0, battingRating: 77, bowlingRating: 75, overallRating: 76, set: 'TIER3_AL' },
+  { id: 'p-ashutosh',  name: 'Ashutosh Sharma',     country: 'India',        role: 'ALL_ROUNDER',   isOverseas: false, basePrice: 0.3, battingRating: 76, bowlingRating: 62, overallRating: 72, set: 'TIER3_AL' },
+  { id: 'p-arshinkulk',name: 'Arshin Kulkarni',     country: 'India',        role: 'ALL_ROUNDER',   isOverseas: false, basePrice: 0.3, battingRating: 72, bowlingRating: 68, overallRating: 70, set: 'TIER3_AL' },
+  { id: 'p-swapnil',   name: 'Swapnil Singh',       country: 'India',        role: 'ALL_ROUNDER',   isOverseas: false, basePrice: 0.2, battingRating: 68, bowlingRating: 67, overallRating: 67, set: 'TIER3_AL' },
+  { id: 'p-cconnolly', name: 'Cooper Connolly',     country: 'Australia',    role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 0.75,battingRating: 74, bowlingRating: 72, overallRating: 73, set: 'TIER3_AL' },
+  { id: 'p-sumitk',    name: 'Sumit Kumar',         country: 'India',        role: 'ALL_ROUNDER',   isOverseas: false, basePrice: 0.3, battingRating: 68, bowlingRating: 70, overallRating: 69, set: 'TIER3_AL' },
+  { id: 'p-harshal',   name: 'Harshal Patel',       country: 'India',        role: 'ALL_ROUNDER',   isOverseas: false, basePrice: 1.5, battingRating: 60, bowlingRating: 85, overallRating: 80, set: 'TIER3_AL' },
+  { id: 'p-woakes',    name: 'Chris Woakes',        country: 'England',      role: 'ALL_ROUNDER',   isOverseas: true,  basePrice: 1.5, battingRating: 72, bowlingRating: 82, overallRating: 79, set: 'TIER3_AL' },
 ];
 
 const TIER3_BOWL: PlayerSeedItem[] = [
   { id: 'p-omccoy',    name: 'Obed McCoy',          country: 'West Indies',  role: 'BOWLER',        isOverseas: true,  basePrice: 0.5, battingRating: 20, bowlingRating: 77, overallRating: 74, set: 'TIER3_BOWL' },
-  { id: 'p-[#shamar]', name: 'Shamar Joseph',       country: 'West Indies',  role: 'BOWLER',        isOverseas: true,  basePrice: 0.75,battingRating: 20, bowlingRating: 79, overallRating: 76, set: 'TIER3_BOWL' },
+  { id: 'p-shamarj',   name: 'Shamar Joseph',       country: 'West Indies',  role: 'BOWLER',        isOverseas: true,  basePrice: 0.75,battingRating: 20, bowlingRating: 79, overallRating: 76, set: 'TIER3_BOWL' },
   { id: 'p-alzarri',   name: 'Alzarri Joseph',      country: 'West Indies',  role: 'BOWLER',        isOverseas: true,  basePrice: 1.5, battingRating: 30, bowlingRating: 81, overallRating: 78, set: 'TIER3_BOWL' },
   { id: 'p-ffarooqi',  name: 'Fazalhaq Farooqi',    country: 'Afghanistan',  role: 'BOWLER',        isOverseas: true,  basePrice: 1.0, battingRating: 15, bowlingRating: 80, overallRating: 77, set: 'TIER3_BOWL' },
   { id: 'p-naveen',    name: 'Naveen-ul-Haq',       country: 'Afghanistan',  role: 'BOWLER',        isOverseas: true,  basePrice: 1.0, battingRating: 20, bowlingRating: 80, overallRating: 77, set: 'TIER3_BOWL' },
@@ -182,6 +216,16 @@ const TIER3_BOWL: PlayerSeedItem[] = [
   { id: 'p-jhyerich',  name: 'Jhye Richardson',     country: 'Australia',    role: 'BOWLER',        isOverseas: true,  basePrice: 1.5, battingRating: 30, bowlingRating: 81, overallRating: 78, set: 'TIER3_BOWL' },
   { id: 'p-mhenry',    name: 'Matt Henry',          country: 'New Zealand',  role: 'BOWLER',        isOverseas: true,  basePrice: 1.5, battingRating: 25, bowlingRating: 81, overallRating: 78, set: 'TIER3_BOWL' },
   { id: 'p-jduffy',    name: 'Jacob Duffy',         country: 'New Zealand',  role: 'BOWLER',        isOverseas: true,  basePrice: 0.75,battingRating: 20, bowlingRating: 77, overallRating: 74, set: 'TIER3_BOWL' },
+  { id: 'p-shivavm',   name: 'Shivam Mavi',         country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.75,battingRating: 30, bowlingRating: 79, overallRating: 76, set: 'TIER3_BOWL' },
+  { id: 'p-msiddhth',  name: 'M. Siddharth',        country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.5, battingRating: 15, bowlingRating: 79, overallRating: 76, set: 'TIER3_BOWL' },
+  { id: 'p-chetans',   name: 'Chetan Sakariya',     country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.5, battingRating: 20, bowlingRating: 76, overallRating: 73, set: 'TIER3_BOWL' },
+  { id: 'p-kartikty',  name: 'Kartik Tyagi',        country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.3, battingRating: 15, bowlingRating: 75, overallRating: 72, set: 'TIER3_BOWL' },
+  { id: 'p-kuldeepsen',name: 'Kuldeep Sen',         country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.5, battingRating: 20, bowlingRating: 75, overallRating: 72, set: 'TIER3_BOWL' },
+  { id: 'p-unadkat',   name: 'Jaydev Unadkat',      country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.75,battingRating: 30, bowlingRating: 78, overallRating: 75, set: 'TIER3_BOWL' },
+  { id: 'p-rasikh',    name: 'Rasikh Dar',          country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.3, battingRating: 15, bowlingRating: 74, overallRating: 71, set: 'TIER3_BOWL' },
+  { id: 'p-manavs',    name: 'Manav Suthar',        country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.3, battingRating: 15, bowlingRating: 74, overallRating: 71, set: 'TIER3_BOWL' },
+  { id: 'p-anshulk',   name: 'Anshul Kamboj',       country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.3, battingRating: 25, bowlingRating: 74, overallRating: 71, set: 'TIER3_BOWL' },
+  { id: 'p-auqibdar',  name: 'Auqib Dar',           country: 'India',        role: 'BOWLER',        isOverseas: false, basePrice: 0.3, battingRating: 20, bowlingRating: 76, overallRating: 73, set: 'TIER3_BOWL' },
 ];
 
 export const STAR_PLAYERS: PlayerSeedItem[] = [
@@ -194,3 +238,5 @@ export const STAR_PLAYERS: PlayerSeedItem[] = [
 export function build350PlayersDataset(): PlayerSeedItem[] {
   return [...STAR_PLAYERS];
 }
+
+

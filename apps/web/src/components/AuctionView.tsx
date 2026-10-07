@@ -74,6 +74,8 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
   const [pendingTradeAlert, setPendingTradeAlert] = useState<TradeOffer | null>(null);
   const [showEditNameModal, setShowEditNameModal] = useState(false);
   const [isAcceleratedModalOpen, setIsAcceleratedModalOpen] = useState(true);
+  const [setTransition, setSetTransition] = useState<{ setKey: string; title: string } | null>(null);
+  const [prevPlayerSet, setPrevPlayerSet] = useState<string | null>(null);
 
   const socket = getSocket();
   const me = room.players.find((p) => p.id === playerId);
@@ -169,6 +171,20 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
     }
   }, [room.status]);
 
+  // Detect set transitions — show "Next Round: XYZ" card for 3 seconds
+  useEffect(() => {
+    if (playerBlock?.player?.set) {
+      const currentSet = playerBlock.player.set;
+      if (prevPlayerSet && prevPlayerSet !== currentSet) {
+        // Set changed! Show transition card
+        const info = getSetCardInfo(currentSet);
+        setSetTransition({ setKey: currentSet, title: info.title });
+        setTimeout(() => setSetTransition(null), 3000);
+      }
+      setPrevPlayerSet(currentSet);
+    }
+  }, [playerBlock?.player?.set]);
+
   // Audio timer warning at 3s
   useEffect(() => {
     if (playerBlock && playerBlock.timerSecondsLeft <= 3 && playerBlock.timerSecondsLeft > 0) {
@@ -236,6 +252,29 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
           </div>
         </div>
       )}
+
+      {/* ━━━━━━━━━━ SET TRANSITION OVERLAY (3 seconds between sets) ━━━━━━━━━━ */}
+      {setTransition && (() => {
+        const info = getSetCardInfo(setTransition.setKey);
+        return (
+          <div className="fixed inset-0 z-[60] bg-black/90 backdrop-blur-lg flex items-center justify-center p-4 animate-bounce-short">
+            <div className={`p-10 rounded-3xl bg-gradient-to-b ${info.bgGradient} border-2 ${info.borderColor} text-center space-y-4 shadow-2xl max-w-lg w-full`}>
+              <div className="text-6xl">{info.icon}</div>
+              <div className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400">
+                NEXT ROUND
+              </div>
+              <h2 className={`text-2xl sm:text-3xl font-black ${info.textColor} tracking-wide`}>
+                {info.title}
+              </h2>
+              <p className="text-sm font-semibold text-slate-300">{info.description}</p>
+              <div className="flex items-center justify-center gap-1 pt-2">
+                <div className="w-2 h-2 rounded-full bg-orange-400 animate-pulse" />
+                <span className="text-xs font-bold text-orange-400 animate-pulse">Starting Now...</span>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Top Bar Navigation */}
       <header className="max-w-6xl mx-auto w-full flex items-center justify-between pb-3 border-b border-slate-800/80">
@@ -617,6 +656,40 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
                   </div>
                 </div>
               </div>
+
+              {/* Team Selector for Late Joiners (no team claimed yet) */}
+              {!myTeamId && (
+                <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-950/60 to-amber-950/40 border border-orange-500/40 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-5 h-5 text-orange-400" />
+                    <span className="font-black text-sm text-orange-300">Claim a Team to Start Bidding</span>
+                  </div>
+                  <p className="text-[11px] text-slate-300">Select an available franchise to participate in the auction:</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                    {IPL_TEAMS.map((team) => {
+                      const teamState = room.teams[team.id];
+                      const isTaken = teamState?.ownerId && teamState.ownerId !== playerId;
+                      return (
+                        <button
+                          key={team.id}
+                          disabled={!!isTaken}
+                          onClick={() => socket.emit('team:select', { code, playerToken: playerId, teamId: team.id })}
+                          className={`p-2 rounded-xl text-xs font-extrabold border transition-all flex flex-col items-center gap-1 ${
+                            isTaken
+                              ? 'bg-slate-900/60 border-slate-800 text-slate-600 cursor-not-allowed opacity-50'
+                              : 'bg-slate-900 border-slate-700 text-white hover:border-orange-500 hover:bg-slate-800'
+                          }`}
+                          style={!isTaken ? { borderColor: team.primaryColor + '80' } : {}}
+                        >
+                          <TeamBadge teamId={team.id} size="sm" />
+                          <span className="truncate">{team.shortName}</span>
+                          {isTaken && <span className="text-[9px] text-slate-500">Taken</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Large Green BID Button */}
               <div className="space-y-2">

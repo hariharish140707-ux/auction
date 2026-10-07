@@ -156,8 +156,9 @@ export function setupSocketHandlers(io: Server) {
           const code = data.code.toUpperCase();
           await auctionEngine.runSerialized(code, async (session) => {
             const room = session.room;
-            if (room.status !== 'LOBBY') {
-              throw new Error('Team selection is locked once auction starts');
+            // Allow team selection in LOBBY or during live auction (for late joiners)
+            if (room.status === 'COMPLETED') {
+              throw new Error('Auction is already completed');
             }
 
             const player = room.players.find((p) => p.id === data.playerToken);
