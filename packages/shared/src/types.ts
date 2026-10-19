@@ -150,6 +150,7 @@ export interface AcceleratedPoll {
 
 export interface RoomSnapshot {
   code: string;
+  hostName: string;
   status: AuctionStatus;
   settings: RoomSettings;
   players: RoomPlayer[];

@@ -104,7 +104,7 @@ export class BotManager {
       currentOverseas -
       (requestedPlayer?.isOverseas ? 1 : 0) +
       (offeredPlayer?.isOverseas ? 1 : 0);
-    const maxOverseas = room.settings.maxOverseasPlayers || 8;
+    const maxOverseas = room.settings.maxOverseas || 8;
     if (newOverseas > maxOverseas) {
       return {
         accept: false,

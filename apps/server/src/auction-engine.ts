@@ -97,6 +97,7 @@ export class AuctionEngine {
 
     const room: RoomSnapshot = {
       code,
+      hostName,
       status: 'LOBBY',
       settings,
       players: [
@@ -764,9 +765,6 @@ export class AuctionEngine {
     };
   }
 
-  /**
-   * Propose a player swap or cash trade.
-   */
   /**
    * Update bid timer duration at any time (Host only).
    */
@@ -1519,71 +1517,6 @@ export class AuctionEngine {
     });
   }
 
-  /**
-   * Kick / Remove a player from the room (Host only).
-   * Releases their team, bans them from re-joining, and broadcasts updated state.
-   */
-  async kickPlayer(
-    code: string,
-    hostToken: string,
-    targetPlayerId: string,
-    broadcaster: (eventName: string, payload?: any) => void
-  ) {
-    return this.runSerialized(code, async (session) => {
-      const room = session.room;
-
-      // Verify the requester is the host
-      const host = room.players.find((p) => p.id === hostToken);
-      if (!host || !host.isHost) {
-        throw new Error('Only the room host can remove players');
-      }
-
-      // Find the target player
-      const target = room.players.find((p) => p.id === targetPlayerId);
-      if (!target) {
-        throw new Error('Target player not found in room');
-      }
-
-      // Cannot kick yourself
-      if (targetPlayerId === hostToken) {
-        throw new Error('Host cannot remove themselves');
-      }
-
-      // If target owns a team, release it or convert to bot
-      if (target.teamId && room.teams[target.teamId]) {
-        const team = room.teams[target.teamId];
-        if (room.status === 'LOBBY') {
-          // In lobby, just release the team
-          team.ownerId = null;
-          team.ownerName = null;
-          team.isBotOwner = false;
-        } else {
-          // During auction, convert to bot-managed so the team isn't abandoned
-          team.ownerId = null;
-          team.ownerName = `Bot (${target.name})`;
-          team.isBotOwner = true;
-        }
-      }
-
-      // Remove the player from the room
-      const playerName = target.name;
-      room.players = room.players.filter((p) => p.id !== targetPlayerId);
-
-      // Add to banned list to prevent re-joining
-      if (!room.bannedPlayerIds) {
-        room.bannedPlayerIds = [];
-      }
-      if (!room.bannedPlayerIds.includes(targetPlayerId)) {
-        room.bannedPlayerIds.push(targetPlayerId);
-      }
-
-      // Add system chat message
-      this.addChatMessage(room, 'System', `🚫 ${playerName} was removed from the room by the host.`, true);
-
-      await roomStore.saveRoom(room);
-      broadcaster('room:state', room);
-    });
-  }
 }
 
 export const auctionEngine = new AuctionEngine();

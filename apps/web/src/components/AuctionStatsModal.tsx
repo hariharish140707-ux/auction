@@ -1,4 +1,4 @@
-import 'use client';
+'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Player, TeamRatingSummary, IPL_TEAMS } from '@ipl-auction/shared';
