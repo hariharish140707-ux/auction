@@ -30,6 +30,7 @@ export interface Player {
   set: PlayerSet;
   retainedByTeamId?: string | null; // For Mini Auction mode
   retainedPrice?: number | null;
+  image?: string;
 }
 
 export type BidIncrementOption = 'DYNAMIC' | '25L' | '50L' | '75L' | '1CR';

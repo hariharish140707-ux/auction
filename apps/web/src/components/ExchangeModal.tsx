@@ -151,7 +151,7 @@ export const ExchangeModal: React.FC<ExchangeModalProps> = ({
 
   if (!isOpen) return null;
 
-  const isHost = !!me?.isHost || room.hostId === playerId;
+  const isHost = !!me?.isHost;
 
   const isBotTeam = (teamId: string) => {
     const team = room.teams[teamId];

@@ -18,6 +18,7 @@ import { ExchangeModal } from './ExchangeModal';
 import { SquadsAccordionView } from './SquadsAccordionView';
 import { AcceleratedPollModal } from './AcceleratedPollModal';
 import { EditNameModal } from './EditNameModal';
+import { PlayerPortrait, getPlayerImageUri } from './PlayerPortrait';
 import { sounds } from '../lib/audio';
 import { getSetCardInfo, DISPLAY_SET_ORDER } from '../lib/setCardConfig';
 import {
@@ -48,6 +49,11 @@ import {
   UserX,
   AlertTriangle,
   Edit3,
+  Crown,
+  Wallet,
+  FileText,
+  User,
+  CircleDot,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -76,6 +82,29 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
   const [isAcceleratedModalOpen, setIsAcceleratedModalOpen] = useState(true);
   const [setTransition, setSetTransition] = useState<{ setKey: string; title: string } | null>(null);
   const [prevPlayerSet, setPrevPlayerSet] = useState<string | null>(null);
+  const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [room.currentPlayerBlock?.player.id]);
+
+  const getCountryFlag = (country: string) => {
+    const c = (country || '').toLowerCase();
+    if (c.includes('india')) return '🇮🇳';
+    if (c.includes('australia')) return '🇦🇺';
+    if (c.includes('england')) return '🏴󠁧󠁢󠁥󠁮󠁧󠁿';
+    if (c.includes('south africa')) return '🇿🇦';
+    if (c.includes('west indies')) return '🌴';
+    if (c.includes('new zealand')) return '🇳🇿';
+    if (c.includes('afghanistan')) return '🇦🇫';
+    if (c.includes('sri lanka')) return '🇱🇰';
+    if (c.includes('bangladesh')) return '🇧🇩';
+    return '🏏';
+  };
+
+  const getPlayerImageSrc = (name: string) => {
+    return getPlayerImageUri(name);
+  };
 
   const socket = getSocket();
   const me = room.players.find((p) => p.id === playerId);
@@ -489,170 +518,100 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
       <main className="max-w-6xl mx-auto w-full my-3 grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Left/Center Column (8 cols): Player Card & Bidding Panel */}
         <div className="lg:col-span-8 space-y-4">
-
-          {/* ━━━━━━━━━━ AUCTION SET CARDS PIPELINE ("WHAT IS COMING NEXT") ━━━━━━━━━━ */}
-          <div className="glass-panel p-3.5 rounded-2xl border border-slate-800 space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <Layers className="w-4 h-4 text-orange-400" />
-                <span className="text-xs font-black uppercase tracking-wider text-slate-200">
-                  Auction Sets Pipeline (What's Coming)
-                </span>
-              </div>
-              <button
-                onClick={() => setShowStatsModal(true)}
-                className="text-[11px] font-extrabold text-orange-400 hover:text-orange-300 flex items-center gap-1 transition-colors"
-              >
-                <span>View Full Set List & Players</span>
-                <Sparkles className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Set Cards Horizontal Strip */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1.5 scrollbar-thin">
-              {DISPLAY_SET_ORDER.map((setKey, idx) => {
-                const info = getSetCardInfo(setKey);
-                const isCurrent = playerBlock?.player.set === setKey;
-                // Find next set index
-                const currentSetIdx = DISPLAY_SET_ORDER.indexOf(playerBlock?.player.set || 'MARQUEE');
-                const isNext = idx === currentSetIdx + 1;
-
-                return (
-                  <button
-                    key={setKey}
-                    onClick={() => setShowStatsModal(true)}
-                    className={`shrink-0 px-3 py-2 rounded-xl border text-left transition-all flex flex-col justify-between min-w-[125px] ${
-                      isCurrent
-                        ? `bg-gradient-to-r ${info.bgGradient} ${info.borderColor} shadow-lg ring-2 ring-orange-500/50 scale-[1.02]`
-                        : isNext
-                        ? 'bg-slate-900/90 border-orange-500/40 text-slate-200 hover:border-orange-500'
-                        : 'bg-slate-950/60 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-1 w-full">
-                      <span className="text-sm">{info.icon}</span>
-                      {isCurrent ? (
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-emerald-500 text-slate-950 animate-pulse">
-                          LIVE NOW
-                        </span>
-                      ) : isNext ? (
-                        <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-500/30 text-amber-300 border border-amber-500/40">
-                          NEXT
-                        </span>
-                      ) : null}
-                    </div>
-
-                    <div className="mt-1">
-                      <div className={`text-xs font-extrabold truncate ${isCurrent ? info.textColor : 'text-slate-200'}`}>
-                        {info.shortTitle}
-                      </div>
-                      <div className="text-[9px] text-slate-400 truncate font-medium">
-                        {info.description.substring(0, 22)}...
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
           {playerBlock ? (
-            <div className="glass-panel p-5 sm:p-7 rounded-3xl space-y-5 border border-slate-800 shadow-2xl relative overflow-hidden">
+            <div className="glass-panel p-6 sm:p-7 rounded-3xl space-y-5 border border-slate-800/80 bg-[#071326]/90 shadow-2xl relative overflow-hidden">
               {/* Corner Circular Timer Badge */}
               <div
-                className={`absolute top-4 right-4 w-12 h-12 rounded-2xl flex items-center justify-center font-extrabold text-lg shadow-lg border ${
+                className={`absolute top-5 right-5 flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl border font-extrabold text-base shadow-lg transition-all ${
                   playerBlock.timerSecondsLeft <= 3
-                    ? 'bg-red-600 text-white border-red-400 animate-pulse'
-                    : 'bg-slate-900 text-orange-400 border-slate-700'
+                    ? 'bg-red-600/90 text-white border-red-500 animate-pulse'
+                    : 'bg-slate-900/90 text-orange-400 border-orange-500/40'
                 }`}
               >
-                {playerBlock.timerSecondsLeft}s
+                <Clock className="w-4 h-4 text-orange-400" />
+                <span>{playerBlock.timerSecondsLeft}s</span>
               </div>
 
-              {/* Set Banner Header Card */}
-              {(() => {
-                const currentSetCard = getSetCardInfo(playerBlock.player.set);
-                return (
-                  <div className={`p-3.5 rounded-2xl bg-gradient-to-r ${currentSetCard.bgGradient} border ${currentSetCard.borderColor} flex items-center justify-between shadow-md mb-2`}>
-                    <div className="flex items-center gap-2.5">
-                      <span className="text-xl sm:text-2xl">{currentSetCard.icon}</span>
-                      <div>
-                        <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase block">
-                          AUCTION BLOCK SET
-                        </span>
-                        <h3 className={`font-black text-xs sm:text-sm ${currentSetCard.textColor}`}>
-                          {currentSetCard.title}
-                        </h3>
-                      </div>
-                    </div>
-                    <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${currentSetCard.badgeColor}`}>
-                      {currentSetCard.description}
-                    </span>
-                  </div>
-                );
-              })()}
-
-              {/* Player Header Info */}
-              <div className="flex items-start gap-4">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-900 border border-slate-700 text-orange-400 font-extrabold text-2xl flex items-center justify-center shadow-lg">
-                  {playerBlock.player.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .substring(0, 2)}
+              {/* Player Top Showcase: Photo + Info */}
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                {/* Large Player Portrait Card */}
+                <div className="relative w-44 sm:w-52 h-56 sm:h-64 rounded-2xl overflow-hidden border border-slate-700/60 shadow-xl shrink-0">
+                  <PlayerPortrait
+                    player={playerBlock.player}
+                    className="w-full h-full"
+                  />
                 </div>
 
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                      SET: {playerBlock.player.set}
-                    </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300">
-                      {playerBlock.player.role}
-                    </span>
-                    {playerBlock.player.isOverseas && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">
-                        ✈️ OS ({playerBlock.player.country})
-                      </span>
-                    )}
+                {/* Player Metadata */}
+                <div className="flex-1 space-y-3 pt-1 text-center sm:text-left">
+                  {/* Set Badge */}
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-xs uppercase tracking-wider">
+                    <Crown className="w-3.5 h-3.5 fill-amber-400" />
+                    <span>{playerBlock.player.set}</span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-white">
+
+                  {/* Player Name */}
+                  <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
                     {playerBlock.player.name}
-                  </h2>
-                  <p className="text-xs text-slate-400">
-                    Base Price: <span className="font-bold text-white">₹{playerBlock.player.basePrice.toFixed(2)} Cr</span> | Overall Rating:{' '}
-                    <span className="font-bold text-amber-400">{playerBlock.player.overallRating}/100</span>
-                  </p>
+                  </h1>
+
+                  {/* Role & Country */}
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs font-bold text-slate-300">
+                    <span className="flex items-center gap-1.5">
+                      <CircleDot className="w-4 h-4 text-slate-400" />
+                      <span className="uppercase">{playerBlock.player.role.replace('_', ' ')}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-sm">{getCountryFlag(playerBlock.player.country)}</span>
+                      <span className="uppercase">{playerBlock.player.country}</span>
+                    </span>
+                  </div>
+
+                  {/* Stats Grid */}
+                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800/60 max-w-sm">
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 block">Base Price</span>
+                      <span className="text-xl sm:text-2xl font-black text-amber-400 block mt-0.5">
+                        ₹{playerBlock.player.basePrice.toFixed(2)} Cr
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-xs font-bold text-slate-400 block">Overall Rating</span>
+                      <span className="text-xl sm:text-2xl font-black text-amber-400 block mt-0.5">
+                        {playerBlock.player.overallRating}/100
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Bidding Info Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/80 p-4 rounded-2xl border border-slate-800">
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-400">Current Bid</span>
-                  <div className="text-xl font-extrabold text-amber-400">
-                    ₹{playerBlock.currentBid.toFixed(2)} Cr
+              {/* Bidding Info Grid (Current Bid & Purse) */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-3.5">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                    <Layers className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                      CURRENT BID
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-amber-400 block mt-0.5">
+                      ₹{playerBlock.currentBid.toFixed(2)} Cr
+                    </span>
                   </div>
                 </div>
 
-                <div>
-                  <span className="text-[10px] font-bold uppercase text-slate-400">Highest Bidder</span>
-                  <div className="text-xs font-bold text-white flex items-center gap-1 mt-1">
-                    {playerBlock.highestBidderTeamId ? (
-                      <>
-                        <TeamBadge teamId={playerBlock.highestBidderTeamId} size="sm" />
-                        <span className="truncate">{playerBlock.highestBidderName}</span>
-                      </>
-                    ) : (
-                      <span className="text-slate-500 italic">No bids yet</span>
-                    )}
+                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-3.5">
+                  <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                    <Wallet className="w-6 h-6 text-cyan-400" />
                   </div>
-                </div>
-
-                <div className="col-span-2 sm:col-span-1">
-                  <span className="text-[10px] font-bold uppercase text-slate-400">Your Purse</span>
-                  <div className="text-base font-extrabold text-emerald-400">
-                    ₹{myTeam ? myTeam.purseRemaining.toFixed(2) : '0.00'} Cr
+                  <div>
+                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                      YOUR PURSE
+                    </span>
+                    <span className="text-xl sm:text-2xl font-black text-cyan-400 block mt-0.5">
+                      ₹{myTeam ? myTeam.purseRemaining.toFixed(2) : '0.00'} Cr
+                    </span>
                   </div>
                 </div>
               </div>
@@ -696,13 +655,13 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
                 <button
                   onClick={handlePlaceBid}
                   disabled={!validationResult.valid}
-                  className={`w-full py-4 rounded-2xl font-extrabold text-lg flex items-center justify-center gap-2 shadow-2xl transition-all ${
+                  className={`w-full py-4 rounded-2xl font-black text-lg sm:text-xl flex items-center justify-center gap-2.5 shadow-2xl transition-all ${
                     validationResult.valid
-                      ? 'bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-600 text-slate-950 glow-green hover:brightness-110 active:scale-[0.99]'
+                      ? 'bg-[#00D26A] hover:bg-[#00BD5F] active:scale-[0.99] text-slate-950 shadow-[0_0_25px_rgba(0,210,106,0.35)] cursor-pointer'
                       : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
                   }`}
                 >
-                  <DollarSign className="w-6 h-6" />
+                  <Gavel className="w-6 h-6 rotate-45" />
                   <span>
                     BID ₹{nextBidAmount.toFixed(2)} Cr
                   </span>
@@ -716,13 +675,27 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
                 )}
               </div>
 
-              {/* History Drawer Toggle Button */}
-              <div className="flex justify-end">
+              {/* Card Footer: Highest Bidder & Bid History */}
+              <div className="flex items-center justify-between pt-2 text-xs text-slate-400 font-semibold border-t border-slate-800/60">
+                <div className="flex items-center gap-1.5">
+                  <User className="w-4 h-4 text-slate-400" />
+                  <span>Highest bidder:</span>
+                  {playerBlock.highestBidderTeamId ? (
+                    <span className="text-white font-bold flex items-center gap-1.5 ml-1">
+                      <TeamBadge teamId={playerBlock.highestBidderTeamId} size="sm" />
+                      <span>{playerBlock.highestBidderName}</span>
+                    </span>
+                  ) : (
+                    <span className="italic text-slate-400 ml-1">No bids yet</span>
+                  )}
+                </div>
+
                 <button
                   onClick={() => setShowHistoryModal(true)}
-                  className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                  className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors"
                 >
-                  <History className="w-3.5 h-3.5" /> Bid History ({playerBlock.bidHistory.length})
+                  <History className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Bid History ({playerBlock.bidHistory.length})</span>
                 </button>
               </div>
             </div>
@@ -742,26 +715,35 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
           <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-2xl border border-slate-800 text-xs">
             <button
               onClick={() => setBottomTab('activity')}
-              className={`flex-1 py-2 rounded-xl font-bold transition-all ${
-                bottomTab === 'activity' ? 'bg-orange-500 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`flex-1 py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all ${
+                bottomTab === 'activity'
+                  ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              Activity
+              <Zap className="w-3.5 h-3.5 fill-current" />
+              <span>Activity</span>
             </button>
             <button
               onClick={() => setBottomTab('squads')}
-              className={`flex-1 py-2 rounded-xl font-bold transition-all ${
-                bottomTab === 'squads' ? 'bg-orange-500 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`flex-1 py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all ${
+                bottomTab === 'squads'
+                  ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              Squads
+              <Users className="w-3.5 h-3.5" />
+              <span>Squads</span>
             </button>
             <button
               onClick={() => setBottomTab('exchange')}
-              className={`flex-1 py-2 rounded-xl font-bold transition-all relative ${
-                bottomTab === 'exchange' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`flex-1 py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all relative ${
+                bottomTab === 'exchange'
+                  ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
+              <ArrowLeftRight className="w-3.5 h-3.5" />
               <span>Exchange</span>
               {room.trades &&
                 room.trades.some((t) => t.toTeamId === myTeamId && t.status === 'PENDING') && (
@@ -770,35 +752,54 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
             </button>
             <button
               onClick={() => setBottomTab('chat')}
-              className={`flex-1 py-2 rounded-xl font-bold transition-all ${
-                bottomTab === 'chat' ? 'bg-orange-500 text-white shadow' : 'text-slate-400 hover:text-white'
+              className={`flex-1 py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all ${
+                bottomTab === 'chat'
+                  ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
-              Chat
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Chat</span>
             </button>
           </div>
 
           {/* Activity Tab */}
-          {bottomTab === 'activity' && playerBlock && (
-            <div className="glass-panel p-4 rounded-2xl border border-slate-800 space-y-3 h-[450px] overflow-y-auto">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">Live Activity Feed</h3>
-              <div className="space-y-2">
-                {playerBlock.bidHistory.map((bid) => (
-                  <div
-                    key={bid.id}
-                    className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs"
-                  >
-                    <div className="flex items-center gap-2">
-                      <TeamBadge teamId={bid.teamId} size="sm" />
-                      <div>
-                        <span className="font-bold text-white">{bid.bidderName}</span>
-                        <p className="text-[10px] text-slate-400">{bid.teamName}</p>
-                      </div>
-                    </div>
-                    <span className="font-extrabold text-amber-400">₹{bid.amount.toFixed(2)} Cr</span>
-                  </div>
-                ))}
+          {bottomTab === 'activity' && (
+            <div className="glass-panel p-5 rounded-3xl border border-slate-800/80 bg-[#071326]/90 shadow-2xl h-[480px] flex flex-col">
+              <div className="flex items-center gap-2 text-xs font-black tracking-wider text-slate-300 uppercase mb-4 shrink-0">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>LIVE ACTIVITY FEED</span>
               </div>
+
+              {!playerBlock || playerBlock.bidHistory.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                  <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-slate-400 mb-3">
+                    <FileText className="w-8 h-8 stroke-[1.5]" />
+                  </div>
+                  <h4 className="text-sm font-bold text-slate-200">No activity yet</h4>
+                  <p className="text-xs text-slate-400 max-w-[220px] mt-1">
+                    Bids, updates and player events will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                  {playerBlock.bidHistory.map((bid) => (
+                    <div
+                      key={bid.id}
+                      className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <TeamBadge teamId={bid.teamId} size="sm" />
+                        <div>
+                          <span className="font-bold text-white block">{bid.bidderName}</span>
+                          <p className="text-[10px] text-slate-400">{bid.teamName}</p>
+                        </div>
+                      </div>
+                      <span className="font-black text-amber-400 text-sm">₹{bid.amount.toFixed(2)} Cr</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

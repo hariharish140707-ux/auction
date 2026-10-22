@@ -15,6 +15,7 @@ export interface PlayerSeedItem {
     | 'TIER3_BAT' | 'TIER3_BOWL' | 'TIER3_AL' | 'TIER3_WK';
   retainedByTeamId?: string;
   retainedPrice?: number;
+  image?: string;
 }
 
 // ─── ⭐ MARQUEE (20 PLAYERS) ──────────────────────────────────────────────────
@@ -235,8 +236,15 @@ export const STAR_PLAYERS: PlayerSeedItem[] = [
   ...TIER3_BAT, ...TIER3_WK, ...TIER3_AL, ...TIER3_BOWL,
 ];
 
+export function slugifyPlayerName(name: string): string {
+  return (name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
+
 export function build350PlayersDataset(): PlayerSeedItem[] {
-  return [...STAR_PLAYERS];
+  return STAR_PLAYERS.map((p) => ({
+    ...p,
+    image: p.image || `/images/players/${slugifyPlayerName(p.name)}.png`,
+  }));
 }
 
 

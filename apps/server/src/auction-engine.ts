@@ -222,6 +222,7 @@ export class AuctionEngine {
           bowlingRating: p.bowlingRating,
           overallRating: p.overallRating,
           set: p.set as any,
+          image: p.image || `/images/players/${(p.name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}.png`,
         };
         if (setMap[item.set]) {
           setMap[item.set].push(item);

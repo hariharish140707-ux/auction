@@ -10,6 +10,7 @@ out/
 # TypeScript build outputs
 dist/
 build/
+*.tsbuildinfo
 
 # Prisma SQLite database
 prisma/*.db

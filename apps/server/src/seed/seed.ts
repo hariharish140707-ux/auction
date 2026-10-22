@@ -24,6 +24,7 @@ async function main() {
         bowlingRating: p.bowlingRating,
         overallRating: p.overallRating,
         set: p.set,
+        image: p.image || `/images/players/${p.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}.png`,
         retainedByTeamId: p.retainedByTeamId || null,
         retainedPrice: p.retainedPrice || null,
       },

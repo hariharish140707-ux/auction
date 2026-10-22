@@ -18,6 +18,7 @@ model Player {
   bowlingRating    Int      @default(75)
   overallRating    Int      @default(75)
   set              String   // MARQUEE | TIER1_BAT | TIER1_BOWL | TIER1_AL | TIER1_WK | TIER2_* | TIER3_*
+  image            String?
   retainedByTeamId String?  // e.g., 'MI' for Mini auction retentions
   retainedPrice    Float?   // in Crores
   createdAt        DateTime @default(now())
