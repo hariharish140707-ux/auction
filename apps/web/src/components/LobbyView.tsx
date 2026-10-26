@@ -106,47 +106,54 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col justify-between p-4 sm:p-6">
       {/* Lobby Header */}
-      <header className="max-w-5xl mx-auto w-full flex items-center justify-between pb-4 border-b border-slate-800">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-xl font-mono tracking-widest text-orange-400">
-                {code}
-              </span>
-              <span className="text-xs bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                Online
-              </span>
+      <header className="max-w-5xl mx-auto w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 sm:pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2.5">
+            <Link
+              href="/"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all shrink-0"
+            >
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            </Link>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-lg sm:text-xl font-mono tracking-widest text-orange-400">
+                  {code}
+                </span>
+                <span className="text-[10px] sm:text-xs bg-slate-800 text-slate-300 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Online
+                </span>
+              </div>
+              <p className="text-[11px] sm:text-xs text-slate-400">Mode: {room.settings.auctionMode} Auction 2026</p>
             </div>
-            <p className="text-xs text-slate-400">Mode: {room.settings.auctionMode} Auction 2026</p>
+          </div>
+
+          <div className="px-2.5 py-1 rounded-xl glass-panel text-[11px] sm:text-xs font-bold flex items-center gap-1.5 sm:hidden">
+            <Users className="w-3.5 h-3.5 text-orange-400" />
+            <span>{room.players.length}/10</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap sm:flex-nowrap justify-end w-full sm:w-auto">
           <button
             onClick={() => setShowEditNameModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
             title="Edit your display name"
           >
-            <Edit3 className="w-4 h-4 text-orange-400" />
-            <span className="max-w-[100px] truncate">{me?.name || 'Your Name'}</span>
+            <Edit3 className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400 shrink-0" />
+            <span className="max-w-[80px] sm:max-w-[100px] truncate">{me?.name || 'Your Name'}</span>
           </button>
 
           <button
             onClick={() => setShowStatsModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+            className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
           >
-            <Layers className="w-4 h-4 text-orange-400" />
+            <Layers className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400 shrink-0" />
             <span>Stats & Sets</span>
           </button>
 
-          <div className="px-3 py-1.5 rounded-xl glass-panel text-xs font-bold flex items-center gap-1.5">
+          <div className="hidden sm:flex px-3 py-1.5 rounded-xl glass-panel text-xs font-bold items-center gap-1.5">
             <Users className="w-4 h-4 text-orange-400" />
             <span>{room.players.length}/10 Connected</span>
           </div>
@@ -154,9 +161,9 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
           {isHost && (
             <button
               onClick={handleStartAuction}
-              className="px-5 py-2.5 rounded-xl font-extrabold text-xs bg-gradient-to-r from-emerald-500 to-green-600 text-slate-950 shadow-lg glow-green hover:brightness-110 transition-all flex items-center gap-2"
+              className="flex-1 sm:flex-none px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-extrabold text-xs bg-gradient-to-r from-emerald-500 to-green-600 text-slate-950 shadow-lg glow-green hover:brightness-110 transition-all flex items-center justify-center gap-1.5 sm:gap-2"
             >
-              <Play className="w-4 h-4 fill-current" />
+              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4 fill-current shrink-0" />
               <span>Start Auction</span>
             </button>
           )}
@@ -165,11 +172,11 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
 
 
       {/* Main Content */}
-      <main className="max-w-5xl mx-auto w-full my-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <main className="max-w-5xl mx-auto w-full my-3 sm:my-6 grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-6">
         {/* Left Column: Invite Card & Players */}
-        <div className="space-y-6">
+        <div className="space-y-3.5 sm:space-y-6">
           {/* Invite Card */}
-          <div className="glass-panel p-5 rounded-2xl space-y-3 border border-slate-800">
+          <div className="glass-panel p-3.5 sm:p-5 rounded-2xl space-y-2.5 sm:space-y-3 border border-slate-800">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">Invite Friends</h3>
               <span className="text-[10px] bg-orange-500/20 text-orange-400 font-bold px-2 py-0.5 rounded">
@@ -211,7 +218,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
           </div>
 
           {/* Connected Players List */}
-          <div className="glass-panel p-5 rounded-2xl space-y-3 border border-slate-800">
+          <div className="glass-panel p-3.5 sm:p-5 rounded-2xl space-y-2.5 sm:space-y-3 border border-slate-800">
             <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center justify-between">
               <span>Lobby Players ({room.players.length}/10)</span>
             </h3>
@@ -338,7 +345,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5 sm:gap-4 pt-2">
                 {IPL_TEAMS.map((team) => {
                   const teamState = room.teams[team.id];
                   const ownerName = teamState?.ownerName;
@@ -349,7 +356,7 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
                     <div
                       key={team.id}
                       onClick={() => !isOccupiedByOther && handleSelectTeam(team.id)}
-                      className={`p-4 rounded-2xl flex flex-col items-center justify-between border cursor-pointer transition-all ${
+                      className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl flex flex-col items-center justify-between border cursor-pointer transition-all ${
                         isMine
                           ? 'border-orange-500 bg-orange-500/10 shadow-lg'
                           : isOccupiedByOther
@@ -363,8 +370,8 @@ export const LobbyView: React.FC<LobbyViewProps> = ({ room, playerId, code }) =>
                         isSelected={isMine}
                         isDisabled={!!isOccupiedByOther}
                       />
-                      <span className="mt-2 text-xs font-bold text-white text-center">{team.name}</span>
-                      <span className="text-[10px] text-slate-400 mt-1">
+                      <span className="mt-1.5 sm:mt-2 text-[11px] sm:text-xs font-bold text-white text-center truncate w-full">{team.name}</span>
+                      <span className="text-[9px] sm:text-[10px] text-slate-400 mt-0.5 sm:mt-1 truncate max-w-full">
                         {isMine ? (
                           <span className="text-orange-400 font-bold">Your Team</span>
                         ) : ownerName ? (

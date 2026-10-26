@@ -65,7 +65,7 @@ interface AuctionViewProps {
 }
 
 export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }) => {
-  const [bottomTab, setBottomTab] = useState<'activity' | 'squads' | 'exchange' | 'chat'>('activity');
+  const [bottomTab, setBottomTab] = useState<'chat' | 'squads' | 'exchange'>('chat');
   const [isMuted, setIsMuted] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showStatsModal, setShowStatsModal] = useState(false);
@@ -75,7 +75,13 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
   const [exchangeTargetTeamId, setExchangeTargetTeamId] = useState<string | null>(null);
   const [exchangeTargetPlayerId, setExchangeTargetPlayerId] = useState<string | null>(null);
   const [confettiTrigger, setConfettiTrigger] = useState(false);
-  const [soldOverlay, setSoldOverlay] = useState<{ type: 'SOLD' | 'UNSOLD'; text: string } | null>(null);
+  const [lastOutcome, setLastOutcome] = useState<{
+    type: 'SOLD' | 'UNSOLD';
+    winnerName?: string;
+    winnerTeamId?: string;
+    amount?: number;
+    basePrice?: number;
+  } | null>(null);
   const [chatInput, setChatInput] = useState('');
   const [pendingTradeAlert, setPendingTradeAlert] = useState<TradeOffer | null>(null);
   const [showEditNameModal, setShowEditNameModal] = useState(false);
@@ -174,7 +180,7 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
     }
   }, [room.trades, myTeamId]);
 
-  // React to room status changes for audio & normal popups for ALL sold/unsold events
+  // React to room status changes for audio & button outcome display
   useEffect(() => {
     if (room.status === 'SOLD') {
       const bid = playerBlock?.currentBid || 0;
@@ -182,23 +188,25 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
 
       sounds.playSoldSound();
       setConfettiTrigger(true);
-      setSoldOverlay({
+      setLastOutcome({
         type: 'SOLD',
-        text: `🔨 SOLD to ${playerBlock?.highestBidderName || soldTeamId} for ₹${bid.toFixed(2)} Cr!`,
+        winnerName: playerBlock?.highestBidderName || soldTeamId || 'Winning Bidder',
+        winnerTeamId: soldTeamId,
+        amount: bid,
       });
       setTimeout(() => {
-        setSoldOverlay(null);
         setConfettiTrigger(false);
-      }, 2400);
+      }, 3000);
     } else if (room.status === 'UNSOLD') {
       sounds.playUnsoldSound();
-      setSoldOverlay({
+      setLastOutcome({
         type: 'UNSOLD',
-        text: `❌ UNSOLD at base price ₹${playerBlock?.player.basePrice.toFixed(2)} Cr`,
+        basePrice: playerBlock?.player.basePrice || 0,
       });
-      setTimeout(() => setSoldOverlay(null), 2400);
+    } else if (room.status === 'PLAYER_ON_BLOCK' || room.status === 'LIVE') {
+      setLastOutcome(null);
     }
-  }, [room.status]);
+  }, [room.status, playerBlock?.player.id]);
 
   // Detect set transitions — show "Next Round: XYZ" card for 3 seconds
   useEffect(() => {
@@ -265,22 +273,6 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col justify-between p-3 sm:p-5 relative overflow-x-hidden">
       <ConfettiEffect trigger={confettiTrigger} />
 
-      {/* SOLD / UNSOLD Full Screen Animation Overlay */}
-      {soldOverlay && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4 animate-bounce-short">
-          <div
-            className={`p-8 rounded-3xl border text-center space-y-3 shadow-2xl max-w-md w-full ${
-              soldOverlay.type === 'SOLD'
-                ? 'bg-gradient-to-b from-emerald-950 to-slate-900 border-emerald-500 glow-green'
-                : 'bg-gradient-to-b from-red-950 to-slate-900 border-red-500'
-            }`}
-          >
-            <div className="text-4xl">{soldOverlay.type === 'SOLD' ? '🏆' : '❌'}</div>
-            <h2 className="text-2xl font-extrabold text-white">{soldOverlay.type}!</h2>
-            <p className="text-sm font-semibold text-slate-200">{soldOverlay.text}</p>
-          </div>
-        </div>
-      )}
 
       {/* ━━━━━━━━━━ SET TRANSITION OVERLAY (3 seconds between sets) ━━━━━━━━━━ */}
       {setTransition && (() => {
@@ -306,197 +298,202 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
       })()}
 
       {/* Top Bar Navigation */}
-      <header className="max-w-6xl mx-auto w-full flex items-center justify-between pb-3 border-b border-slate-800/80">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <Link
-            href="/"
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white"
-          >
-            <Home className="w-4 h-4" />
-          </Link>
-          <div>
+      <header className="max-w-6xl mx-auto w-full flex flex-col gap-2 pb-2.5 sm:pb-3 border-b border-slate-800/80">
+        <div className="flex items-center justify-between w-full">
+          {/* Left: Home, Room Code & Players badge */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/"
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-400 hover:text-white transition-all shrink-0"
+            >
+              <Home className="w-4 h-4" />
+            </Link>
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-base sm:text-lg font-mono tracking-widest text-orange-400">
                 {code}
               </span>
               <button
                 onClick={() => setShowPlayersModal(true)}
-                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1.5 transition-all border border-slate-700"
+                className="text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-2 py-0.5 rounded-full flex items-center gap-1 transition-all border border-slate-700 shrink-0"
                 title="Manage & View Room Players"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>{room.players.length}/10 Players</span>
+                <span>{room.players.length}/10</span>
               </button>
             </div>
           </div>
+
+          {/* Right: Action Buttons & Mute Toggle */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Edit Display Name Button */}
+            <button
+              onClick={() => setShowEditNameModal(true)}
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+              title="Edit your display name"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+              <span className="hidden sm:inline max-w-[80px] sm:max-w-[100px] truncate">{me?.name || 'Your Name'}</span>
+            </button>
+
+            {/* Accelerated Poll Badge / Trigger Button if Active */}
+            {room.acceleratedPoll &&
+              (room.acceleratedPoll.status === 'VOTING' || room.acceleratedPoll.status === 'BALLOT') && (
+                <button
+                  onClick={() => setIsAcceleratedModalOpen(true)}
+                  className="px-2 sm:px-3 py-1.5 rounded-xl bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 font-bold text-xs flex items-center gap-1 shadow transition-all animate-pulse"
+                  title="Open Accelerated Auction Ballot / Poll"
+                >
+                  <Zap className="w-3.5 h-3.5 fill-current shrink-0" />
+                  <span className="hidden md:inline">Accelerated Ballot</span>
+                </button>
+              )}
+
+            {/* Players Management Button */}
+            <button
+              onClick={() => setShowPlayersModal(true)}
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+              title="Room Participants & Kick Manager"
+            >
+              <Users className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+              <span className="hidden md:inline">Players</span>
+            </button>
+
+            {/* Auction Stats / Sets Modal Button */}
+            <button
+              onClick={() => setShowStatsModal(true)}
+              className="px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+              title="View Upcoming Sets & Stats"
+            >
+              <Layers className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+              <span className="hidden sm:inline">Stats</span>
+            </button>
+
+            {/* Exchange / Trading Window Button */}
+            <button
+              onClick={() => setShowExchangeModal(true)}
+              className="relative px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-950 to-slate-900 border border-emerald-600/60 hover:border-emerald-500 text-emerald-300 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
+              title="IPL Player Exchange & Trading"
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span className="hidden sm:inline">Exchange</span>
+              {room.trades &&
+                room.trades.some((t) => t.toTeamId === myTeamId && t.status === 'PENDING') && (
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-ping absolute -top-1 -right-1"></span>
+                )}
+            </button>
+
+            <button
+              onClick={() => {
+                sounds.isMuted = !isMuted;
+                setIsMuted(!isMuted);
+              }}
+              className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white shrink-0"
+            >
+              {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-orange-400" />}
+            </button>
+          </div>
         </div>
 
-        {/* Action Buttons, Host Controls & Mute Toggle */}
-        <div className="flex items-center gap-2">
-          {/* Edit Display Name Button */}
-          <button
-            onClick={() => setShowEditNameModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
-            title="Edit your display name"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-orange-400" />
-            <span className="hidden sm:inline max-w-[100px] truncate">{me?.name || 'Your Name'}</span>
-          </button>
+        {/* Host Controls Bar (Horizontally scrollable on mobile) */}
+        {isHost && (
+          <div className="flex items-center gap-1.5 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 overflow-x-auto no-scrollbar w-full">
+            <span className="text-[10px] font-black uppercase tracking-wider text-orange-400 px-1 shrink-0">
+              HOST:
+            </span>
 
-          {/* Accelerated Poll Badge / Trigger Button if Active */}
-          {room.acceleratedPoll &&
-            (room.acceleratedPoll.status === 'VOTING' || room.acceleratedPoll.status === 'BALLOT') && (
-              <button
-                onClick={() => setIsAcceleratedModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-orange-500/20 border border-orange-500/50 text-orange-400 hover:bg-orange-500/30 font-bold text-xs flex items-center gap-1.5 shadow transition-all animate-pulse"
-                title="Open Accelerated Auction Ballot / Poll"
+            {/* Dynamic Timer Changer */}
+            <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800 text-xs shrink-0" title="Change bid timer duration">
+              <Clock className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+              <select
+                value={room.settings.bidTimerDuration}
+                onChange={(e) => {
+                  const newDur = Number(e.target.value);
+                  socket.emit('timer:change', { code, playerToken: playerId, duration: newDur });
+                }}
+                className="bg-transparent font-extrabold text-white text-xs focus:outline-none cursor-pointer"
               >
-                <Zap className="w-3.5 h-3.5 fill-current" />
-                <span className="hidden sm:inline">Accelerated Ballot Active</span>
+                <option value={5} className="bg-slate-900 text-white">5s</option>
+                <option value={10} className="bg-slate-900 text-white">10s</option>
+                <option value={15} className="bg-slate-900 text-white">15s</option>
+                <option value={20} className="bg-slate-900 text-white">20s</option>
+                <option value={30} className="bg-slate-900 text-white">30s</option>
+                <option value={45} className="bg-slate-900 text-white">45s</option>
+              </select>
+            </div>
+
+            {/* Host Bid Increment Changer */}
+            <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800 text-xs shrink-0" title="Change bid increment">
+              <Gavel className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+              <select
+                value={room.settings.bidIncrementOption || 'DYNAMIC'}
+                onChange={(e) => {
+                  const option = e.target.value;
+                  socket.emit('bid:increment:change', { code, playerToken: playerId, option });
+                }}
+                className="bg-transparent font-extrabold text-amber-400 text-xs focus:outline-none cursor-pointer"
+              >
+                <option value="DYNAMIC" className="bg-slate-900 text-white">Dynamic</option>
+                <option value="25L" className="bg-slate-900 text-white">+25L</option>
+                <option value="50L" className="bg-slate-900 text-white">+50L</option>
+                <option value="75L" className="bg-slate-900 text-white">+75L</option>
+                <option value="1CR" className="bg-slate-900 text-white">+1Cr</option>
+              </select>
+            </div>
+
+            {/* Accelerated Auction Poll Trigger */}
+            <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-orange-500/30 text-xs shrink-0">
+              <Zap className="w-3.5 h-3.5 text-orange-400 fill-current shrink-0" />
+              <select
+                defaultValue=""
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val) {
+                    socket.emit('poll:start', { code, playerToken: playerId, targetSet: val });
+                    e.target.value = '';
+                  }
+                }}
+                className="bg-transparent font-extrabold text-orange-300 text-xs focus:outline-none cursor-pointer"
+                title="Trigger Accelerated Poll by set or for all remaining"
+              >
+                <option value="" disabled className="bg-slate-900 text-slate-400">⚡ Poll Set...</option>
+                <option value="CURRENT" className="bg-slate-900 text-white">Current Set</option>
+                <option value="MARQUEE" className="bg-slate-900 text-white">Marquee Set</option>
+                <option value="TIER1_BAT" className="bg-slate-900 text-white">Tier 1 Batsmen</option>
+                <option value="TIER1_BOWL" className="bg-slate-900 text-white">Tier 1 Bowlers</option>
+                <option value="TIER1_AL" className="bg-slate-900 text-white">Tier 1 All-Rounders</option>
+                <option value="TIER1_WK" className="bg-slate-900 text-white">Tier 1 Keepers</option>
+                <option value="TIER2_BAT" className="bg-slate-900 text-white">Tier 2 Batsmen</option>
+                <option value="TIER2_BOWL" className="bg-slate-900 text-white">Tier 2 Bowlers</option>
+                <option value="TIER2_AL" className="bg-slate-900 text-white">Tier 2 All-Rounders</option>
+                <option value="TIER2_WK" className="bg-slate-900 text-white">Tier 2 Keepers</option>
+                <option value="TIER3_BAT" className="bg-slate-900 text-white">Tier 3 Emerging</option>
+                <option value="ALL" className="bg-slate-900 text-white">All Remaining</option>
+              </select>
+            </div>
+
+            {room.status === 'PAUSED' ? (
+              <button
+                onClick={handleResume}
+                className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center gap-1 shrink-0"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" /> Resume
+              </button>
+            ) : (
+              <button
+                onClick={handlePause}
+                className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold text-xs flex items-center gap-1 shrink-0"
+              >
+                <Pause className="w-3.5 h-3.5" /> Pause
               </button>
             )}
-
-          {/* Players Management Button */}
-          <button
-            onClick={() => setShowPlayersModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
-            title="Room Participants & Kick Manager"
-          >
-            <Users className="w-3.5 h-3.5 text-orange-400" />
-            <span className="hidden sm:inline">Players ({room.players.length})</span>
-          </button>
-
-          {/* Auction Stats / Sets Modal Button */}
-          <button
-            onClick={() => setShowStatsModal(true)}
-            className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-orange-500/60 text-slate-200 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
-            title="View Upcoming Sets & Stats"
-          >
-            <Layers className="w-3.5 h-3.5 text-orange-400" />
-            <span className="hidden sm:inline">Stats & Sets</span>
-          </button>
-
-          {/* Exchange / Trading Window Button */}
-          <button
-            onClick={() => setShowExchangeModal(true)}
-            className="relative px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-950 to-slate-900 border border-emerald-600/60 hover:border-emerald-500 text-emerald-300 hover:text-white font-bold text-xs flex items-center gap-1.5 shadow transition-all"
-            title="IPL Player Exchange & Trading"
-          >
-            <ArrowLeftRight className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Exchange</span>
-            {room.trades &&
-              room.trades.some((t) => t.toTeamId === myTeamId && t.status === 'PENDING') && (
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping absolute -top-1 -right-1"></span>
-              )}
-          </button>
-
-          {isHost && (
-            <div className="flex flex-wrap items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
-              {/* Dynamic Timer Changer */}
-              <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800 text-xs" title="Change bid timer duration at any time">
-                <Clock className="w-3.5 h-3.5 text-orange-400" />
-                <select
-                  value={room.settings.bidTimerDuration}
-                  onChange={(e) => {
-                    const newDur = Number(e.target.value);
-                    socket.emit('timer:change', { code, playerToken: playerId, duration: newDur });
-                  }}
-                  className="bg-transparent font-extrabold text-white text-xs focus:outline-none cursor-pointer"
-                >
-                  <option value={5} className="bg-slate-900 text-white">5s</option>
-                  <option value={10} className="bg-slate-900 text-white">10s</option>
-                  <option value={15} className="bg-slate-900 text-white">15s</option>
-                  <option value={20} className="bg-slate-900 text-white">20s</option>
-                  <option value={30} className="bg-slate-900 text-white">30s</option>
-                  <option value={45} className="bg-slate-900 text-white">45s</option>
-                </select>
-              </div>
-
-              {/* Host Bid Increment Changer */}
-              <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800 text-xs" title="Change bid increment at any time">
-                <Gavel className="w-3.5 h-3.5 text-amber-400" />
-                <select
-                  value={room.settings.bidIncrementOption || 'DYNAMIC'}
-                  onChange={(e) => {
-                    const option = e.target.value;
-                    socket.emit('bid:increment:change', { code, playerToken: playerId, option });
-                  }}
-                  className="bg-transparent font-extrabold text-amber-400 text-xs focus:outline-none cursor-pointer"
-                >
-                  <option value="DYNAMIC" className="bg-slate-900 text-white">Dynamic (IPL Tiers)</option>
-                  <option value="25L" className="bg-slate-900 text-white">+₹25 Lakhs</option>
-                  <option value="50L" className="bg-slate-900 text-white">+₹50 Lakhs</option>
-                  <option value="75L" className="bg-slate-900 text-white">+₹75 Lakhs</option>
-                  <option value="1CR" className="bg-slate-900 text-white">+₹1.00 Crore</option>
-                </select>
-              </div>
-
-              {/* Accelerated Auction Poll Trigger with Set Selector */}
-              <div className="flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-orange-500/30 text-xs">
-                <Zap className="w-3.5 h-3.5 text-orange-400 fill-current" />
-                <select
-                  defaultValue=""
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val) {
-                      socket.emit('poll:start', { code, playerToken: playerId, targetSet: val });
-                      e.target.value = '';
-                    }
-                  }}
-                  className="bg-transparent font-extrabold text-orange-300 text-xs focus:outline-none cursor-pointer"
-                  title="Trigger Accelerated Poll by set or for all remaining"
-                >
-                  <option value="" disabled className="bg-slate-900 text-slate-400">⚡ Poll Set...</option>
-                  <option value="CURRENT" className="bg-slate-900 text-white">Current Set</option>
-                  <option value="MARQUEE" className="bg-slate-900 text-white">Marquee Set</option>
-                  <option value="TIER1_BAT" className="bg-slate-900 text-white">Tier 1 Batsmen</option>
-                  <option value="TIER1_BOWL" className="bg-slate-900 text-white">Tier 1 Bowlers</option>
-                  <option value="TIER1_AL" className="bg-slate-900 text-white">Tier 1 All-Rounders</option>
-                  <option value="TIER1_WK" className="bg-slate-900 text-white">Tier 1 Keepers</option>
-                  <option value="TIER2_BAT" className="bg-slate-900 text-white">Tier 2 Batsmen</option>
-                  <option value="TIER2_BOWL" className="bg-slate-900 text-white">Tier 2 Bowlers</option>
-                  <option value="TIER2_AL" className="bg-slate-900 text-white">Tier 2 All-Rounders</option>
-                  <option value="TIER2_WK" className="bg-slate-900 text-white">Tier 2 Keepers</option>
-                  <option value="TIER3_BAT" className="bg-slate-900 text-white">Tier 3 Emerging</option>
-                  <option value="ALL" className="bg-slate-900 text-white">All Remaining Sets</option>
-                </select>
-              </div>
-
-              {room.status === 'PAUSED' ? (
-                <button
-                  onClick={handleResume}
-                  className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white font-bold text-xs flex items-center gap-1"
-                >
-                  <Play className="w-3.5 h-3.5 fill-current" /> Resume
-                </button>
-              ) : (
-                <button
-                  onClick={handlePause}
-                  className="px-2.5 py-1 rounded-lg bg-amber-600 text-white font-bold text-xs flex items-center gap-1"
-                >
-                  <Pause className="w-3.5 h-3.5" /> Pause
-                </button>
-              )}
-              <button
-                onClick={handleSkip}
-                className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center gap-1"
-              >
-                <SkipForward className="w-3.5 h-3.5" /> Skip
-              </button>
-            </div>
-          )}
-
-
-          <button
-            onClick={() => {
-              sounds.isMuted = !isMuted;
-              setIsMuted(!isMuted);
-            }}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white"
-          >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4 text-orange-400" />}
-          </button>
-        </div>
+            <button
+              onClick={handleSkip}
+              className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center gap-1 shrink-0"
+            >
+              <SkipForward className="w-3.5 h-3.5" /> Skip
+            </button>
+          </div>
+        )}
       </header>
 
 
@@ -519,23 +516,23 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
         {/* Left/Center Column (8 cols): Player Card & Bidding Panel */}
         <div className="lg:col-span-8 space-y-4">
           {playerBlock ? (
-            <div className="glass-panel p-6 sm:p-7 rounded-3xl space-y-5 border border-slate-800/80 bg-[#071326]/90 shadow-2xl relative overflow-hidden">
+            <div className="glass-panel p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl space-y-3 sm:space-y-5 border border-slate-800/80 bg-[#071326]/90 shadow-2xl relative overflow-hidden">
               {/* Corner Circular Timer Badge */}
               <div
-                className={`absolute top-5 right-5 flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl border font-extrabold text-base shadow-lg transition-all ${
+                className={`absolute top-3.5 right-3.5 sm:top-5 sm:right-5 flex items-center gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-xl sm:rounded-2xl border font-extrabold text-xs sm:text-base shadow-lg transition-all ${
                   playerBlock.timerSecondsLeft <= 3
                     ? 'bg-red-600/90 text-white border-red-500 animate-pulse'
                     : 'bg-slate-900/90 text-orange-400 border-orange-500/40'
                 }`}
               >
-                <Clock className="w-4 h-4 text-orange-400" />
+                <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-400" />
                 <span>{playerBlock.timerSecondsLeft}s</span>
               </div>
 
-              {/* Player Top Showcase: Photo + Info */}
-              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-                {/* Large Player Portrait Card */}
-                <div className="relative w-44 sm:w-52 h-56 sm:h-64 rounded-2xl overflow-hidden border border-slate-700/60 shadow-xl shrink-0">
+              {/* Player Top Showcase: Photo + Info (Responsive horizontal layout on mobile, side-by-side on sm+) */}
+              <div className="flex flex-row items-start gap-3 sm:gap-6">
+                {/* Responsive Player Portrait Card */}
+                <div className="relative w-24 h-28 sm:w-48 sm:h-60 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-700/60 shadow-xl shrink-0">
                   <PlayerPortrait
                     player={playerBlock.player}
                     className="w-full h-full"
@@ -543,41 +540,41 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
                 </div>
 
                 {/* Player Metadata */}
-                <div className="flex-1 space-y-3 pt-1 text-center sm:text-left">
-                  {/* Set Badge */}
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-xs uppercase tracking-wider">
-                    <Crown className="w-3.5 h-3.5 fill-amber-400" />
-                    <span>{playerBlock.player.set}</span>
-                  </div>
-
-                  {/* Player Name */}
-                  <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                    {playerBlock.player.name}
-                  </h1>
-
-                  {/* Role & Country */}
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs font-bold text-slate-300">
-                    <span className="flex items-center gap-1.5">
-                      <CircleDot className="w-4 h-4 text-slate-400" />
-                      <span className="uppercase">{playerBlock.player.role.replace('_', ' ')}</span>
+                <div className="flex-1 min-w-0 space-y-1 sm:space-y-3 pt-0.5">
+                  {/* Set Badge & Country Flag */}
+                  <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 font-black text-[10px] sm:text-xs uppercase tracking-wider">
+                      <Crown className="w-3 h-3 fill-amber-400" />
+                      <span>{playerBlock.player.set}</span>
                     </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="text-sm">{getCountryFlag(playerBlock.player.country)}</span>
+                    <span className="text-[11px] sm:text-xs font-bold text-slate-300 flex items-center gap-1">
+                      <span>{getCountryFlag(playerBlock.player.country)}</span>
                       <span className="uppercase">{playerBlock.player.country}</span>
                     </span>
                   </div>
 
+                  {/* Player Name */}
+                  <h1 className="text-lg sm:text-3xl font-black text-white tracking-tight truncate sm:whitespace-normal">
+                    {playerBlock.player.name}
+                  </h1>
+
+                  {/* Role */}
+                  <div className="flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-slate-300">
+                    <CircleDot className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <span className="uppercase">{playerBlock.player.role.replace('_', ' ')}</span>
+                  </div>
+
                   {/* Stats Grid */}
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-slate-800/60 max-w-sm">
+                  <div className="grid grid-cols-2 gap-2 sm:gap-4 pt-1 sm:pt-2 border-t border-slate-800/60 max-w-sm">
                     <div>
-                      <span className="text-xs font-bold text-slate-400 block">Base Price</span>
-                      <span className="text-xl sm:text-2xl font-black text-amber-400 block mt-0.5">
+                      <span className="text-[10px] sm:text-xs font-bold text-slate-400 block">Base Price</span>
+                      <span className="text-sm sm:text-2xl font-black text-amber-400 block mt-0.5">
                         ₹{playerBlock.player.basePrice.toFixed(2)} Cr
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs font-bold text-slate-400 block">Overall Rating</span>
-                      <span className="text-xl sm:text-2xl font-black text-amber-400 block mt-0.5">
+                      <span className="text-[10px] sm:text-xs font-bold text-slate-400 block">Overall Rating</span>
+                      <span className="text-sm sm:text-2xl font-black text-amber-400 block mt-0.5">
                         {playerBlock.player.overallRating}/100
                       </span>
                     </div>
@@ -586,30 +583,30 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
               </div>
 
               {/* Bidding Info Grid (Current Bid & Purse) */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-3.5">
-                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                    <Layers className="w-6 h-6 text-amber-400" />
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2 sm:gap-3.5">
+                  <div className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 shrink-0">
+                    <Layers className="w-4 h-4 sm:w-6 sm:h-6 text-amber-400" />
                   </div>
-                  <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                  <div className="min-w-0">
+                    <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400 block">
                       CURRENT BID
                     </span>
-                    <span className="text-xl sm:text-2xl font-black text-amber-400 block mt-0.5">
+                    <span className="text-base sm:text-2xl font-black text-amber-400 block truncate mt-0.5">
                       ₹{playerBlock.currentBid.toFixed(2)} Cr
                     </span>
                   </div>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-3.5">
-                  <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                    <Wallet className="w-6 h-6 text-cyan-400" />
+                <div className="p-2.5 sm:p-4 rounded-xl sm:rounded-2xl bg-slate-950/80 border border-slate-800/80 flex items-center gap-2 sm:gap-3.5">
+                  <div className="p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 shrink-0">
+                    <Wallet className="w-4 h-4 sm:w-6 sm:h-6 text-cyan-400" />
                   </div>
-                  <div>
-                    <span className="text-[11px] font-black uppercase tracking-wider text-slate-400 block">
+                  <div className="min-w-0">
+                    <span className="text-[9px] sm:text-[11px] font-black uppercase tracking-wider text-slate-400 block">
                       YOUR PURSE
                     </span>
-                    <span className="text-xl sm:text-2xl font-black text-cyan-400 block mt-0.5">
+                    <span className="text-base sm:text-2xl font-black text-cyan-400 block truncate mt-0.5">
                       ₹{myTeam ? myTeam.purseRemaining.toFixed(2) : '0.00'} Cr
                     </span>
                   </div>
@@ -618,13 +615,13 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
 
               {/* Team Selector for Late Joiners (no team claimed yet) */}
               {!myTeamId && (
-                <div className="p-4 rounded-2xl bg-gradient-to-r from-orange-950/60 to-amber-950/40 border border-orange-500/40 space-y-3">
+                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-gradient-to-r from-orange-950/60 to-amber-950/40 border border-orange-500/40 space-y-2 sm:space-y-3">
                   <div className="flex items-center gap-2">
-                    <Shield className="w-5 h-5 text-orange-400" />
-                    <span className="font-black text-sm text-orange-300">Claim a Team to Start Bidding</span>
+                    <Shield className="w-4 h-4 text-orange-400" />
+                    <span className="font-black text-xs sm:text-sm text-orange-300">Claim a Team to Start Bidding</span>
                   </div>
-                  <p className="text-[11px] text-slate-300">Select an available franchise to participate in the auction:</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                  <p className="text-[10px] sm:text-[11px] text-slate-300">Select an available franchise to participate in the auction:</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 sm:gap-2">
                     {IPL_TEAMS.map((team) => {
                       const teamState = room.teams[team.id];
                       const isTaken = teamState?.ownerId && teamState.ownerId !== playerId;
@@ -650,40 +647,65 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
                 </div>
               )}
 
-              {/* Large Green BID Button */}
+              {/* Bidding Button Area / Outcome Area (Outcome shown directly in the button!) */}
               <div className="space-y-2">
-                <button
-                  onClick={handlePlaceBid}
-                  disabled={!validationResult.valid}
-                  className={`w-full py-4 rounded-2xl font-black text-lg sm:text-xl flex items-center justify-center gap-2.5 shadow-2xl transition-all ${
-                    validationResult.valid
-                      ? 'bg-[#00D26A] hover:bg-[#00BD5F] active:scale-[0.99] text-slate-950 shadow-[0_0_25px_rgba(0,210,106,0.35)] cursor-pointer'
-                      : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
-                  }`}
-                >
-                  <Gavel className="w-6 h-6 rotate-45" />
-                  <span>
-                    BID ₹{nextBidAmount.toFixed(2)} Cr
-                  </span>
-                </button>
+                {room.status === 'SOLD' || lastOutcome?.type === 'SOLD' ? (
+                  <div className="w-full py-3.5 sm:py-4 px-4 rounded-2xl font-black text-sm sm:text-lg flex flex-col sm:flex-row items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-600 text-slate-950 shadow-[0_0_25px_rgba(16,185,129,0.5)] border-2 border-emerald-300 animate-pulse">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl">🏆</span>
+                      <span className="uppercase tracking-wider font-black">SOLD TO</span>
+                      {(lastOutcome?.winnerTeamId || playerBlock.highestBidderTeamId) && (
+                        <TeamBadge teamId={lastOutcome?.winnerTeamId || playerBlock.highestBidderTeamId || ''} size="sm" />
+                      )}
+                      <span className="font-black text-slate-950">
+                        {lastOutcome?.winnerName || playerBlock.highestBidderName || 'Winning Bidder'}
+                      </span>
+                    </div>
+                    <span className="text-xs sm:text-base font-black bg-slate-950/20 text-slate-950 px-2.5 py-0.5 rounded-lg">
+                      ₹{((lastOutcome?.amount ?? playerBlock.currentBid) || 0).toFixed(2)} Cr
+                    </span>
+                  </div>
+                ) : room.status === 'UNSOLD' || lastOutcome?.type === 'UNSOLD' ? (
+                  <div className="w-full py-3.5 sm:py-4 px-4 rounded-2xl font-black text-sm sm:text-lg flex items-center justify-center gap-2 bg-gradient-to-r from-rose-950 to-red-900 text-rose-200 border-2 border-rose-500/50 shadow-lg">
+                    <span className="text-xl">❌</span>
+                    <span>UNSOLD (Base Price: ₹{((lastOutcome?.basePrice ?? playerBlock.player.basePrice) || 0).toFixed(2)} Cr)</span>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={handlePlaceBid}
+                      disabled={!validationResult.valid}
+                      className={`w-full py-3 sm:py-4 rounded-2xl font-black text-base sm:text-xl flex items-center justify-center gap-2 sm:gap-2.5 shadow-2xl transition-all ${
+                        validationResult.valid
+                          ? 'bg-[#00D26A] hover:bg-[#00BD5F] active:scale-[0.98] text-slate-950 shadow-[0_0_25px_rgba(0,210,106,0.35)] cursor-pointer'
+                          : 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      <Gavel className="w-5 h-5 sm:w-6 sm:h-6 rotate-45" />
+                      <span>
+                        BID ₹{nextBidAmount.toFixed(2)} Cr
+                      </span>
+                    </button>
 
-                {!validationResult.valid && (
-                  <p className="text-center text-xs font-semibold text-amber-400/90 flex items-center justify-center gap-1">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    {validationResult.reason}
-                  </p>
+                    {!validationResult.valid && (
+                      <p className="text-center text-[11px] sm:text-xs font-semibold text-amber-400/90 flex items-center justify-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{validationResult.reason}</span>
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
 
               {/* Card Footer: Highest Bidder & Bid History */}
               <div className="flex items-center justify-between pt-2 text-xs text-slate-400 font-semibold border-t border-slate-800/60">
-                <div className="flex items-center gap-1.5">
-                  <User className="w-4 h-4 text-slate-400" />
-                  <span>Highest bidder:</span>
+                <div className="flex items-center gap-1.5 truncate">
+                  <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span className="hidden xs:inline">Highest bidder:</span>
                   {playerBlock.highestBidderTeamId ? (
-                    <span className="text-white font-bold flex items-center gap-1.5 ml-1">
+                    <span className="text-white font-bold flex items-center gap-1.5 ml-1 truncate">
                       <TeamBadge teamId={playerBlock.highestBidderTeamId} size="sm" />
-                      <span>{playerBlock.highestBidderName}</span>
+                      <span className="truncate">{playerBlock.highestBidderName}</span>
                     </span>
                   ) : (
                     <span className="italic text-slate-400 ml-1">No bids yet</span>
@@ -692,15 +714,15 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
 
                 <button
                   onClick={() => setShowHistoryModal(true)}
-                  className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors"
+                  className="flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors shrink-0 ml-2"
                 >
                   <History className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Bid History ({playerBlock.bidHistory.length})</span>
+                  <span>History ({playerBlock.bidHistory.length})</span>
                 </button>
               </div>
             </div>
           ) : (
-            <div className="glass-panel p-12 rounded-3xl text-center space-y-3 border border-slate-800">
+            <div className="glass-panel p-8 sm:p-12 rounded-3xl text-center space-y-3 border border-slate-800">
               <p className="text-base font-bold text-slate-300">
                 {room.status === 'COMPLETED'
                   ? '🎉 Auction Completed!'
@@ -710,19 +732,19 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
           )}
         </div>
 
-        {/* Right Column (4 cols): Tabs (Activity, Squads, Exchange, Chat) */}
+        {/* Right Column (4 cols): Tabs (Chat, Squads, Exchange) */}
         <div className="lg:col-span-4 space-y-4">
           <div className="flex items-center gap-1 bg-slate-900/80 p-1 rounded-2xl border border-slate-800 text-xs">
             <button
-              onClick={() => setBottomTab('activity')}
+              onClick={() => setBottomTab('chat')}
               className={`flex-1 py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all ${
-                bottomTab === 'activity'
+                bottomTab === 'chat'
                   ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Zap className="w-3.5 h-3.5 fill-current" />
-              <span>Activity</span>
+              <MessageSquare className="w-3.5 h-3.5" />
+              <span>Chat ({room.chatMessages.length})</span>
             </button>
             <button
               onClick={() => setBottomTab('squads')}
@@ -750,60 +772,9 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
                   <span className="w-1.5 h-1.5 rounded-full bg-red-500 absolute top-1 right-1"></span>
                 )}
             </button>
-            <button
-              onClick={() => setBottomTab('chat')}
-              className={`flex-1 py-2 px-2.5 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-all ${
-                bottomTab === 'chat'
-                  ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <MessageSquare className="w-3.5 h-3.5" />
-              <span>Chat</span>
-            </button>
           </div>
 
-          {/* Activity Tab */}
-          {bottomTab === 'activity' && (
-            <div className="glass-panel p-5 rounded-3xl border border-slate-800/80 bg-[#071326]/90 shadow-2xl h-[480px] flex flex-col">
-              <div className="flex items-center gap-2 text-xs font-black tracking-wider text-slate-300 uppercase mb-4 shrink-0">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span>LIVE ACTIVITY FEED</span>
-              </div>
-
-              {!playerBlock || playerBlock.bidHistory.length === 0 ? (
-                <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-                  <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-slate-400 mb-3">
-                    <FileText className="w-8 h-8 stroke-[1.5]" />
-                  </div>
-                  <h4 className="text-sm font-bold text-slate-200">No activity yet</h4>
-                  <p className="text-xs text-slate-400 max-w-[220px] mt-1">
-                    Bids, updates and player events will appear here.
-                  </p>
-                </div>
-              ) : (
-                <div className="flex-1 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
-                  {playerBlock.bidHistory.map((bid) => (
-                    <div
-                      key={bid.id}
-                      className="p-3 rounded-xl bg-slate-900/60 border border-slate-800 flex items-center justify-between text-xs"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <TeamBadge teamId={bid.teamId} size="sm" />
-                        <div>
-                          <span className="font-bold text-white block">{bid.bidderName}</span>
-                          <p className="text-[10px] text-slate-400">{bid.teamName}</p>
-                        </div>
-                      </div>
-                      <span className="font-black text-amber-400 text-sm">₹{bid.amount.toFixed(2)} Cr</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Squads Tab matching Screenshot 2 */}
+          {/* Squads Tab */}
           {bottomTab === 'squads' && (
             <div className="glass-panel p-3 rounded-2xl border border-slate-800 space-y-3 h-[450px] overflow-y-auto">
               <div className="flex items-center justify-between px-1">
@@ -864,10 +835,61 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
             </div>
           )}
 
-          {/* Chat Tab */}
+          {/* Chat Tab with Merged Latest Bidders Feed */}
           {bottomTab === 'chat' && (
-            <div className="glass-panel p-4 rounded-2xl border border-slate-800 flex flex-col h-[450px] justify-between">
-              <div className="overflow-y-auto space-y-2 pr-1 flex-1">
+            <div className="glass-panel p-3.5 sm:p-4 rounded-2xl border border-slate-800 flex flex-col h-[450px] justify-between">
+              {/* Merged Latest Bidders Panel */}
+              <div className="bg-slate-950/90 rounded-xl p-2.5 sm:p-3 border border-slate-800/80 mb-2.5 shrink-0 shadow-inner">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-orange-400">
+                    <Zap className="w-3.5 h-3.5 fill-current text-amber-400 animate-pulse" />
+                    <span>Latest Bidders</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-semibold">
+                    {playerBlock?.bidHistory.length
+                      ? `${playerBlock.bidHistory.length} bid${playerBlock.bidHistory.length > 1 ? 's' : ''}`
+                      : 'No bids yet'}
+                  </span>
+                </div>
+
+                {!playerBlock || playerBlock.bidHistory.length === 0 ? (
+                  <div className="py-2 text-center text-xs text-slate-500 italic">
+                    Waiting for first bid on {playerBlock?.player.name || 'player'}...
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-1.5">
+                    {playerBlock.bidHistory.slice(0, 3).map((bid, index) => (
+                      <div
+                        key={bid.id}
+                        className={`px-2.5 py-1.5 rounded-lg border flex items-center justify-between text-xs transition-all ${
+                          index === 0
+                            ? 'bg-gradient-to-r from-amber-500/15 to-orange-500/10 border-amber-500/40 text-white shadow-sm'
+                            : 'bg-slate-900/60 border-slate-800/80 text-slate-300'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <TeamBadge teamId={bid.teamId} size="sm" />
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-extrabold text-white">{bid.bidderName}</span>
+                            <span className="text-[10px] text-slate-400 font-mono">({bid.teamId})</span>
+                            {index === 0 && (
+                              <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/40 font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                                Top Bid
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-black text-amber-400 text-xs sm:text-sm">
+                          ₹{bid.amount.toFixed(2)} Cr
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Chat Message Stream */}
+              <div className="overflow-y-auto space-y-2 pr-1 flex-1 scrollbar-thin">
                 {room.chatMessages.map((msg) => (
                   <div
                     key={msg.id}
@@ -885,7 +907,8 @@ export const AuctionView: React.FC<AuctionViewProps> = ({ room, playerId, code }
                 ))}
               </div>
 
-              <form onSubmit={handleSendChat} className="flex gap-2 pt-2 border-t border-slate-800">
+              {/* Chat Input Form */}
+              <form onSubmit={handleSendChat} className="flex gap-2 pt-2 border-t border-slate-800 shrink-0">
                 <input
                   type="text"
                   value={chatInput}

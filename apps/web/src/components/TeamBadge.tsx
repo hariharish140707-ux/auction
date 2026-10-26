@@ -28,10 +28,10 @@ export const TeamBadge: React.FC<TeamBadgeProps> = ({
   };
 
   const sizeClasses = {
-    sm: 'w-10 h-10 text-xs border-2',
-    md: 'w-14 h-14 text-sm border-2',
-    lg: 'w-20 h-20 text-base border-3',
-    xl: 'w-24 h-24 text-lg border-4',
+    sm: 'w-8 h-8 sm:w-10 sm:h-10 text-[10px] sm:text-xs border-2',
+    md: 'w-11 h-11 sm:w-14 sm:h-14 text-xs sm:text-sm border-2',
+    lg: 'w-14 h-14 sm:w-20 sm:h-20 text-xs sm:text-base border-2 sm:border-3',
+    xl: 'w-18 h-18 sm:w-24 sm:h-24 text-sm sm:text-lg border-3 sm:border-4',
   }[size];
 
   return (
